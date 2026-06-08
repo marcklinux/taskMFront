@@ -1,9 +1,15 @@
 import React from 'react'
+import './menu.css'
 
-const menu = () => {
+const Menu = () => {
   return (
-    <div>menu</div>
+    <section className="app-menu">
+      <button type="button">Todas</button>
+      <button type="button">Importantes</button>
+      <button type="button">Recordatorios</button>
+      <button type="button">Etiquetas</button>
+    </section>
   )
 }
 
-export default menu
+export default Menu
