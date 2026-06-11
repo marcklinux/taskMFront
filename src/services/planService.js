@@ -1,5 +1,14 @@
 const API_BASE_URL = 'http://localhost:8080/api/planes';
 
+export const getPlans = async () => {
+    const response = await fetch(API_BASE_URL);
+    if (!response.ok) {
+        throw new Error(`Error al obtener planes: ${response.statusText}`);
+    }
+    return response.json();
+};
+
+
 export const createPlan = async (planData) => {
   const payload = {
     proyectId: planData.projectId ?? planData.proyectId ?? planData.projectID,
