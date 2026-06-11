@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPlan } from '../services/planService.js';
 import { getStatuses } from '../services/statusService.js';
 

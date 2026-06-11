@@ -1,6 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getPlans } from '../services/planService.js';
 import { createTask } from '../services/taskService.js';
 import { getStatuses } from '../services/statusService.js';
+
+const normalizePlans = (data) => {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.content)) {
+    return data.content;
+  }
+
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+
+  return [];
+};
+
+const getPlanTitle = (plan) =>
+  plan.title ?? plan.name ?? plan.nombre ?? plan.description ?? plan.descripcion ?? 'Plan sin título';
 
 const Tareas = ({ initialPlanId }) => {
   const [title, setTitle] = useState('');
@@ -8,6 +28,9 @@ const Tareas = ({ initialPlanId }) => {
   const [statusId, setStatusId] = useState('');
   const [planId, setPlanId] = useState(initialPlanId || '');
   const [taskDate, setTaskDate] = useState('');
+  const [plans, setPlans] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [plansError, setPlansError] = useState(null);
   const [statuses, setStatuses] = useState([]);
   const [statusesLoading, setStatusesLoading] = useState(false);
   const [statusesError, setStatusesError] = useState(null);
@@ -16,25 +39,26 @@ const Tareas = ({ initialPlanId }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (initialPlanId) {
-      setPlanId(initialPlanId);
-    }
-  }, [initialPlanId]);
-
-  useEffect(() => {
-    const fetchStatuses = async () => {
+    const fetchFormOptions = async () => {
       setStatusesLoading(true);
       setStatusesError(null);
+      setPlansLoading(true);
+      setPlansError(null);
+
       try {
-        const data = await getStatuses();
-        setStatuses(Array.isArray(data) ? data : []);
+        const [statusesData, plansData] = await Promise.all([getStatuses(), getPlans()]);
+        setStatuses(Array.isArray(statusesData) ? statusesData : []);
+        setPlans(normalizePlans(plansData));
       } catch (err) {
-        setStatusesError(err.message || 'No se pudieron cargar los status.');
+        const message = err.message || 'No se pudieron cargar las opciones del formulario.';
+        setStatusesError(message);
+        setPlansError(message);
       } finally {
         setStatusesLoading(false);
+        setPlansLoading(false);
       }
     };
-    fetchStatuses();
+    fetchFormOptions();
   }, []);
 
   const handleSubmit = async (event) => {
@@ -57,7 +81,7 @@ const Tareas = ({ initialPlanId }) => {
       setTitle('');
       setDescription('');
       setStatusId('');
-      setPlanId('');
+      setPlanId(initialPlanId || '');
       setTaskDate('');
     } catch (err) {
       setError(err.message || 'No se pudo crear la tarea.');
@@ -69,7 +93,7 @@ const Tareas = ({ initialPlanId }) => {
   return (
     <main>
       <h1>Crear nueva tarea</h1>
-      <form onSubmit={handleSubmit}>
+      <form className="page-form" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="title">Título *</label>
           <input
@@ -114,15 +138,30 @@ const Tareas = ({ initialPlanId }) => {
         </div>
 
         <div>
-          <label htmlFor="planId">ID de Plan *</label>
-          <input
+          <label htmlFor="planId">Plan *</label>
+          {plansLoading ? (
+            <p>Cargando planes...</p>
+          ) : plansError ? (
+            <p style={{ color: 'red' }}>{plansError}</p>
+          ) : (
+          <select
             id="planId"
-            type="number"
-            min="1"
             value={planId}
             onChange={(event) => setPlanId(event.target.value)}
             required
-          />
+          >
+            <option value="">Seleccione un plan</option>
+            {plans.map((plan) => {
+              const optionPlanId = plan.id ?? plan._id ?? plan.planId;
+
+              return (
+                <option key={optionPlanId} value={optionPlanId}>
+                  {getPlanTitle(plan)}
+                </option>
+              );
+            })}
+          </select>
+          )}
         </div>
 
         <div>
@@ -135,8 +174,8 @@ const Tareas = ({ initialPlanId }) => {
           />
         </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creando...' : 'Crear tarea'}
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Guardando...' : 'Guardar tarea'}
         </button>
       </form>
 

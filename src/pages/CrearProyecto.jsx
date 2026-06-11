@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createProject } from '../services/projectService.js';
 import { getStatuses } from '../services/statusService.js';
 

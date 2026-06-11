@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getProjects } from '../services/projectService.js';
 
 const Proyecto = ({ onAgregarPlan, onNuevoProyecto }) => {

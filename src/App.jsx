@@ -8,17 +8,14 @@ import Tareas from './pages/Tareas'
 import Proyecto from './pages/Proyecto'
 import CrearProyecto from './pages/CrearProyecto'
 import CrearPlan from './pages/CrearPlan'
+import ListaDePlanes from './pages/ListaDePlanes'
+import ListaDeTareas from './pages/ListaDeTareas'
 
 function App() {
   const [view, setView] = useState('home')
   const [selectedProjectId, setSelectedProjectId] = useState('')
   const [selectedPlanId, setSelectedPlanId] = useState('')
   const [flashMessage, setFlashMessage] = useState(null)
-  const [tasks] = useState([
-    { id: 1, title: 'Revisar correos', status: 'Hoy' },
-    { id: 2, title: 'Completar informe', status: 'Próximas' },
-    { id: 3, title: 'Revisar diseño', status: 'Etiquetas' },
-  ])
 
   const handleMostrarTareas = (planId = '') => {
     setSelectedPlanId(planId)
@@ -32,6 +29,14 @@ function App() {
 
   const handleMostrarProyectos = () => {
     setView('home')
+  }
+
+  const handleMostrarPlanes = () => {
+    setView('planes')
+  }
+
+  const handleMostrarListaTareas = () => {
+    setView('listaTareas')
   }
 
   const handleProjectCreated = (projectId) => {
@@ -57,6 +62,8 @@ function App() {
     <div className="app-shell">
       <Header
         onVerProyectos={handleMostrarProyectos}
+        onVerPlanes={handleMostrarPlanes}
+        onVerTareas={handleMostrarListaTareas}
         onNuevoProyecto={handleMostrarNuevoProyecto}
         onNuevaTarea={() => handleMostrarTareas()}
       />
@@ -64,7 +71,11 @@ function App() {
         <Sidebar />
         <main className="app-main">
           {flashMessage && <div className="flash-message">{flashMessage}</div>}
-          {view === 'tareas' ? (
+          {view === 'planes' ? (
+            <ListaDePlanes onNuevaTarea={handleMostrarTareas} />
+          ) : view === 'listaTareas' ? (
+            <ListaDeTareas />
+          ) : view === 'tareas' ? (
             <Tareas initialPlanId={selectedPlanId} />
           ) : view === 'nuevoProyecto' ? (
             <CrearProyecto onCreated={handleProjectCreated} />

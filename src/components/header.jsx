@@ -1,7 +1,6 @@
-import React from 'react'
 import './header.css'
 
-const Header = ({ onVerProyectos, onNuevaTarea, onNuevoProyecto }) => {
+const Header = ({ onVerProyectos, onVerPlanes, onVerTareas, onNuevaTarea, onNuevoProyecto }) => {
   return (
     <header className="app-header">
       <div className="header-brand">
@@ -11,6 +10,12 @@ const Header = ({ onVerProyectos, onNuevaTarea, onNuevoProyecto }) => {
       <div className="header-actions">
         <button type="button" className="btn btn-tertiary" onClick={onVerProyectos}>
           Proyectos
+        </button>
+        <button type="button" className="btn btn-tertiary" onClick={onVerPlanes}>
+          Planes
+        </button>
+        <button type="button" className="btn btn-tertiary" onClick={onVerTareas}>
+          Tareas
         </button>
         <button type="button" className="btn btn-secondary" onClick={onNuevoProyecto}>
           + Nuevo proyecto
