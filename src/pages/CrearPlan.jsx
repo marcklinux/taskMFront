@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { createTask } from '../services/taskService.js';
+import React, { useState, useEffect } from 'react';
+import { createPlan } from '../services/planService.js';
 import { getStatuses } from '../services/statusService.js';
 
-const Tareas = ({ initialPlanId }) => {
+const CrearPlan = ({ projectId, onCreated }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [statusId, setStatusId] = useState('');
-  const [planId, setPlanId] = useState(initialPlanId || '');
-  const [taskDate, setTaskDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [statuses, setStatuses] = useState([]);
   const [statusesLoading, setStatusesLoading] = useState(false);
   const [statusesError, setStatusesError] = useState(null);
@@ -15,11 +15,44 @@ const Tareas = ({ initialPlanId }) => {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (initialPlanId) {
-      setPlanId(initialPlanId);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!projectId) {
+      setError('No se encuentra el proyecto asociado para crear el plan.');
+      return;
     }
-  }, [initialPlanId]);
+
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const planData = {
+        projectId: Number(projectId),
+        title,
+        description,
+        statusId: Number(statusId),
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      };
+
+      const createdPlan = await createPlan(planData);
+      setMessage('Plan creado correctamente.');
+      setTitle('');
+      setDescription('');
+      setStatusId('');
+      setStartDate('');
+      setEndDate('');
+
+      if (onCreated) {
+        onCreated(createdPlan.id ?? createdPlan._id ?? createdPlan.planId);
+      }
+    } catch (err) {
+      setError(err.message || 'No se pudo crear el plan.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchStatuses = async () => {
@@ -34,44 +67,17 @@ const Tareas = ({ initialPlanId }) => {
         setStatusesLoading(false);
       }
     };
+
     fetchStatuses();
   }, []);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const taskData = {
-        title,
-        description,
-        statusId: Number(statusId),
-        planId: Number(planId),
-        taskDate: taskDate || undefined,
-      };
-
-      await createTask(taskData);
-      setMessage('Tarea creada correctamente.');
-      setTitle('');
-      setDescription('');
-      setStatusId('');
-      setPlanId('');
-      setTaskDate('');
-    } catch (err) {
-      setError(err.message || 'No se pudo crear la tarea.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <main>
-      <h1>Crear nueva tarea</h1>
-      <form onSubmit={handleSubmit}>
+      <h1>Crear nuevo plan</h1>
+      <p>Proyecto asociado: {projectId ?? 'N/A'}</p>
+      <form className="page-form" onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="title">Título *</label>
+          <label htmlFor="title">Título del plan *</label>
           <input
             id="title"
             type="text"
@@ -114,29 +120,27 @@ const Tareas = ({ initialPlanId }) => {
         </div>
 
         <div>
-          <label htmlFor="planId">ID de Plan *</label>
+          <label htmlFor="startDate">Fecha de inicio</label>
           <input
-            id="planId"
-            type="number"
-            min="1"
-            value={planId}
-            onChange={(event) => setPlanId(event.target.value)}
-            required
+            id="startDate"
+            type="date"
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
           />
         </div>
 
         <div>
-          <label htmlFor="taskDate">Fecha de Tarea</label>
+          <label htmlFor="endDate">Fecha de fin</label>
           <input
-            id="taskDate"
+            id="endDate"
             type="date"
-            value={taskDate}
-            onChange={(event) => setTaskDate(event.target.value)}
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
           />
         </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creando...' : 'Crear tarea'}
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Guardando...' : 'Guardar plan'}
         </button>
       </form>
 
@@ -146,4 +150,4 @@ const Tareas = ({ initialPlanId }) => {
   );
 };
 
-export default Tareas;
+export default CrearPlan;
