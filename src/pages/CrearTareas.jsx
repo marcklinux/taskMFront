@@ -22,7 +22,7 @@ const normalizePlans = (data) => {
 const getPlanTitle = (plan) =>
   plan.title ?? plan.name ?? plan.nombre ?? plan.description ?? plan.descripcion ?? 'Plan sin título';
 
-const Tareas = ({ initialPlanId }) => {
+const CrearTareas = ({ initialPlanId }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [statusId, setStatusId] = useState('');
@@ -58,6 +58,7 @@ const Tareas = ({ initialPlanId }) => {
         setPlansLoading(false);
       }
     };
+
     fetchFormOptions();
   }, []);
 
@@ -92,7 +93,7 @@ const Tareas = ({ initialPlanId }) => {
 
   return (
     <main>
-      <h1>Crear nueva tarea</h1>
+      <h1>Crear tareas</h1>
       <form className="page-form" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="title">Título *</label>
@@ -144,28 +145,28 @@ const Tareas = ({ initialPlanId }) => {
           ) : plansError ? (
             <p style={{ color: 'red' }}>{plansError}</p>
           ) : (
-          <select
-            id="planId"
-            value={planId}
-            onChange={(event) => setPlanId(event.target.value)}
-            required
-          >
-            <option value="">Seleccione un plan</option>
-            {plans.map((plan) => {
-              const optionPlanId = plan.id ?? plan._id ?? plan.planId;
+            <select
+              id="planId"
+              value={planId}
+              onChange={(event) => setPlanId(event.target.value)}
+              required
+            >
+              <option value="">Seleccione un plan</option>
+              {plans.map((plan) => {
+                const optionPlanId = plan.id ?? plan._id ?? plan.planId;
 
-              return (
-                <option key={optionPlanId} value={optionPlanId}>
-                  {getPlanTitle(plan)}
-                </option>
-              );
-            })}
-          </select>
+                return (
+                  <option key={optionPlanId} value={optionPlanId}>
+                    {getPlanTitle(plan)}
+                  </option>
+                );
+              })}
+            </select>
           )}
         </div>
 
         <div>
-          <label htmlFor="taskDate">Fecha de Tarea</label>
+          <label htmlFor="taskDate">Fecha de tarea</label>
           <input
             id="taskDate"
             type="date"
@@ -185,4 +186,4 @@ const Tareas = ({ initialPlanId }) => {
   );
 };
 
-export default Tareas;
+export default CrearTareas;

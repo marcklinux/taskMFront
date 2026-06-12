@@ -1,60 +1,38 @@
-import { useState, useEffect } from 'react';
-import { createProject } from '../services/projectService.js';
+import { useEffect, useState } from 'react';
+import { updateProject } from '../services/projectService.js';
 import { getStatuses } from '../services/statusService.js';
 
-const CrearProyecto = ({ onCreated }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [statusId, setStatusId] = useState('');
-  const [periodId, setPeriodId] = useState('');
+const getProjectId = (project) => project?.id ?? project?._id ?? project?.projectId;
+
+const formatInputDate = (date) => {
+  if (!date) {
+    return '';
+  }
+
+  return String(date).slice(0, 10);
+};
+
+const EditarProyecto = ({ project, onUpdated, onCancel }) => {
+  const [name, setName] = useState(project?.name ?? project?.nombre ?? '');
+  const [description, setDescription] = useState(project?.description ?? project?.descripcion ?? '');
+  const [statusId, setStatusId] = useState(
+    project?.statusId ?? project?.status?.id ?? project?.status?._id ?? '',
+  );
+  const [periodId, setPeriodId] = useState(project?.periodId ?? project?.period?.id ?? '');
   const [statuses, setStatuses] = useState([]);
   const [statusesLoading, setStatusesLoading] = useState(false);
   const [statusesError, setStatusesError] = useState(null);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(formatInputDate(project?.startDate ?? project?.fechaInicio));
+  const [endDate, setEndDate] = useState(formatInputDate(project?.endDate ?? project?.fechaFin));
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const projectData = {
-        name,
-        description,
-        statusId: Number(statusId),
-        periodId: periodId ? Number(periodId) : undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-      };
-
-      const createdProject = await createProject(projectData);
-      setMessage('Proyecto creado correctamente.');
-      setName('');
-      setDescription('');
-      setStatusId('');
-      setPeriodId('');
-      setStartDate('');
-      setEndDate('');
-
-      if (onCreated) {
-        onCreated(createdProject.id ?? createdProject._id ?? createdProject.projectId);
-      }
-    } catch (err) {
-      setError(err.message || 'No se pudo crear el proyecto.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     const fetchStatuses = async () => {
       setStatusesLoading(true);
       setStatusesError(null);
+
       try {
         const data = await getStatuses();
         setStatuses(Array.isArray(data) ? data : []);
@@ -68,9 +46,53 @@ const CrearProyecto = ({ onCreated }) => {
     fetchStatuses();
   }, []);
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const projectId = getProjectId(project);
+      const projectData = {
+        name,
+        description,
+        statusId: Number(statusId),
+        periodId: periodId ? Number(periodId) : undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      };
+
+      const updatedProject = await updateProject(projectId, projectData);
+      setMessage('Proyecto actualizado correctamente.');
+
+      if (onUpdated) {
+        onUpdated(updatedProject.id ?? updatedProject._id ?? updatedProject.projectId ?? projectId);
+      }
+    } catch (err) {
+      setError(err.message || 'No se pudo actualizar el proyecto.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!project) {
+    return (
+      <main>
+        <h1>Editar proyecto</h1>
+        <p>No se seleccionó un proyecto para editar.</p>
+        {onCancel && (
+          <button type="button" className="btn btn-primary" onClick={onCancel}>
+            Volver al listado
+          </button>
+        )}
+      </main>
+    );
+  }
+
   return (
     <main>
-      <h1>Crear proyecto</h1>
+      <h1>Editar proyecto</h1>
       <form className="page-form" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="name">Nombre del proyecto *</label>
@@ -146,9 +168,16 @@ const CrearProyecto = ({ onCreated }) => {
           />
         </div>
 
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Guardando...' : 'Guardar proyecto'}
-        </button>
+        <div className="form-actions">
+          {onCancel && (
+            <button type="button" className="btn btn-tertiary" onClick={onCancel} disabled={loading}>
+              Cancelar
+            </button>
+          )}
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </div>
       </form>
 
       {message && <p style={{ color: 'green' }}>{message}</p>}
@@ -157,4 +186,4 @@ const CrearProyecto = ({ onCreated }) => {
   );
 };
 
-export default CrearProyecto;
+export default EditarProyecto;

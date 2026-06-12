@@ -23,3 +23,19 @@ export const createProject = async (projectData) => {
 
   return response.json();
 };
+
+export const updateProject = async (projectId, projectData) => {
+  const response = await fetch(`${API_BASE_URL}/${projectId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(projectData),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error al actualizar el proyecto: ${response.statusText}`);
+  }
+
+  return response.json();
+};

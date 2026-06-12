@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import './App.css'
 import Header from './components/header'
-import Sidebar from './components/sidebar'
-import Menu from './components/menu'
 import Footer from './components/footer'
-import Tareas from './pages/Tareas'
-import Proyecto from './pages/Proyecto'
+import CrearTareas from './pages/CrearTareas'
+import ListaDeProyectos from './pages/ListaDeProyectos'
 import CrearProyecto from './pages/CrearProyecto'
+import EditarProyecto from './pages/EditarProyecto'
 import CrearPlan from './pages/CrearPlan'
 import ListaDePlanes from './pages/ListaDePlanes'
 import ListaDeTareas from './pages/ListaDeTareas'
@@ -14,20 +13,23 @@ import ListaDeTareas from './pages/ListaDeTareas'
 function App() {
   const [view, setView] = useState('home')
   const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [selectedProject, setSelectedProject] = useState(null)
   const [selectedPlanId, setSelectedPlanId] = useState('')
   const [flashMessage, setFlashMessage] = useState(null)
 
-  const handleMostrarTareas = (planId = '') => {
+  const handleMostrarCrearTareas = (planId = '') => {
     setSelectedPlanId(planId)
-    setView('tareas')
+    setView('crearTareas')
   }
 
   const handleMostrarNuevoProyecto = () => {
     setSelectedProjectId('')
+    setSelectedProject(null)
     setView('nuevoProyecto')
   }
 
   const handleMostrarProyectos = () => {
+    setSelectedProject(null)
     setView('home')
   }
 
@@ -41,8 +43,22 @@ function App() {
 
   const handleProjectCreated = (projectId) => {
     setSelectedProjectId(projectId)
+    setSelectedProject(null)
     setView('home')
     setFlashMessage('Proyecto creado correctamente.')
+    setTimeout(() => setFlashMessage(null), 3000)
+  }
+
+  const handleMostrarEditarProyecto = (project) => {
+    setSelectedProject(project)
+    setSelectedProjectId(project.id ?? project._id ?? project.projectId)
+    setView('editarProyecto')
+  }
+
+  const handleProjectUpdated = () => {
+    setSelectedProject(null)
+    setView('home')
+    setFlashMessage('Proyecto actualizado correctamente.')
     setTimeout(() => setFlashMessage(null), 3000)
   }
 
@@ -65,27 +81,34 @@ function App() {
         onVerPlanes={handleMostrarPlanes}
         onVerTareas={handleMostrarListaTareas}
         onNuevoProyecto={handleMostrarNuevoProyecto}
-        onNuevaTarea={() => handleMostrarTareas()}
+        onNuevaTarea={() => handleMostrarCrearTareas()}
       />
       <div className="app-content">
-        <Sidebar />
         <main className="app-main">
           {flashMessage && <div className="flash-message">{flashMessage}</div>}
           {view === 'planes' ? (
-            <ListaDePlanes onNuevaTarea={handleMostrarTareas} />
+            <ListaDePlanes onNuevaTarea={handleMostrarCrearTareas} />
           ) : view === 'listaTareas' ? (
             <ListaDeTareas />
-          ) : view === 'tareas' ? (
-            <Tareas initialPlanId={selectedPlanId} />
+          ) : view === 'crearTareas' ? (
+            <CrearTareas initialPlanId={selectedPlanId} />
           ) : view === 'nuevoProyecto' ? (
             <CrearProyecto onCreated={handleProjectCreated} />
+          ) : view === 'editarProyecto' ? (
+            <EditarProyecto
+              key={selectedProjectId}
+              project={selectedProject}
+              onUpdated={handleProjectUpdated}
+              onCancel={handleMostrarProyectos}
+            />
           ) : view === 'nuevoPlan' ? (
             <CrearPlan projectId={selectedProjectId} onCreated={handlePlanCreated} />
           ) : (
-            <>
-              <Menu />
-              <Proyecto onAgregarPlan={handleMostrarNuevoPlan} onNuevoProyecto={handleMostrarNuevoProyecto} />
-            </>
+            <ListaDeProyectos
+              onAgregarPlan={handleMostrarNuevoPlan}
+              onEditarProyecto={handleMostrarEditarProyecto}
+              onNuevoProyecto={handleMostrarNuevoProyecto}
+            />
           )}
         </main>
       </div>

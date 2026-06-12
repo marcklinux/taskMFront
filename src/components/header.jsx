@@ -9,19 +9,19 @@ const Header = ({ onVerProyectos, onVerPlanes, onVerTareas, onNuevaTarea, onNuev
       </div>
       <div className="header-actions">
         <button type="button" className="btn btn-tertiary" onClick={onVerProyectos}>
-          Proyectos
+          Listado de proyectos
         </button>
         <button type="button" className="btn btn-tertiary" onClick={onVerPlanes}>
           Planes
         </button>
         <button type="button" className="btn btn-tertiary" onClick={onVerTareas}>
-          Tareas
+          Listado de tareas
         </button>
         <button type="button" className="btn btn-secondary" onClick={onNuevoProyecto}>
-          + Nuevo proyecto
+          + Crear proyecto
         </button>
         <button type="button" className="btn btn-primary" onClick={onNuevaTarea}>
-          + Nueva tarea
+          + Crear tarea
         </button>
       </div>
     </header>
