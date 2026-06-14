@@ -86,6 +86,7 @@ const ListaDePlanes = ({ onNuevaTarea, onEditarPlan }) => {
                   <div>
                     <h3>{plan.title ?? plan.name ?? 'Plan sin título'}</h3>
                     <p>{plan.description ?? plan.descripcion ?? 'Sin descripción'}</p>
+                    <p>Estado: {plan.status.name ?? plan.estado ?? 'Sin estado'}</p>
                   </div>
 
                   <div className="project-card-actions">
@@ -109,7 +110,7 @@ const ListaDePlanes = ({ onNuevaTarea, onEditarPlan }) => {
                 </div>
 
                 <div className="project-cta">
-                  <p>Proyecto: {projectId ?? 'N/A'}</p>
+                  <p>Proyecto: {plan.proyect?.name ?? 'N/A'}</p>
                   <p>
                     Inicio: {formatDate(plan.startDate ?? plan.fechaInicio)} | Fin:{' '}
                     {formatDate(plan.endDate ?? plan.fechaFin)}
