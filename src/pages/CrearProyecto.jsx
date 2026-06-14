@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createProject } from '../services/projectService.js';
 import { getStatuses } from '../services/statusService.js';
+import { getPeriodos } from '../services/periodoService.js';
 
 const CrearProyecto = ({ onCreated }) => {
   const [name, setName] = useState('');
@@ -10,6 +11,9 @@ const CrearProyecto = ({ onCreated }) => {
   const [statuses, setStatuses] = useState([]);
   const [statusesLoading, setStatusesLoading] = useState(false);
   const [statusesError, setStatusesError] = useState(null);
+  const [periodos, setPeriodos] = useState([]);
+  const [periodosLoading, setPeriodosLoading] = useState(false);
+  const [periodosError, setPeriodosError] = useState(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,7 +32,7 @@ const CrearProyecto = ({ onCreated }) => {
         name,
         description,
         statusId: Number(statusId),
-        periodId: periodId ? Number(periodId) : undefined,
+        periodId: Number(periodId),
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       };
@@ -68,6 +72,24 @@ const CrearProyecto = ({ onCreated }) => {
     };
 
     fetchStatuses();
+  }, []);
+
+  useEffect(() => {
+    // Carga el catálogo de periodos para llenar el select inicial.
+    const fetchPeriodos = async () => {
+      setPeriodosLoading(true);
+      setPeriodosError(null);
+      try {
+        const data = await getPeriodos();
+        setPeriodos(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setPeriodosError(err.message || 'No se pudieron cargar los periodos.');
+      } finally {
+        setPeriodosLoading(false);
+      }
+    };
+
+    fetchPeriodos();
   }, []);
 
   return (
@@ -116,18 +138,28 @@ const CrearProyecto = ({ onCreated }) => {
             </select>
           )}
         </div>
-
         <div>
-          <label htmlFor="periodId">ID de Periodo</label>
-          <input
-            id="periodId"
-            type="number"
-            min="1"
-            value={periodId}
-            onChange={(event) => setPeriodId(event.target.value)}
-          />
+          <label htmlFor="periodId">Periodo *</label>
+          {periodosLoading ? (
+            <p>Cargando periodos...</p>
+          ) : periodosError ? (
+            <p style={{ color: 'red' }}>{periodosError}</p>
+          ) : (
+            <select
+              id="periodId"
+              value={periodId}
+              onChange={(event) => setPeriodId(event.target.value)}
+              required
+            >
+              <option value="">Seleccione un periodo</option>
+              {periodos.map((p) => (
+                <option key={p.id ?? p._id ?? p.periodId} value={p.id ?? p._id ?? p.periodId}>
+                  {p.name ?? p.nombre ?? p.description ?? p.descripcion}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
-
         <div>
           <label htmlFor="startDate">Fecha de inicio</label>
           <input
