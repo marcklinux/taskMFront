@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getPlans } from '../services/planService.js';
 import { getTasks } from '../services/taskService.js';
 
+// Guarda tareas completadas localmente para no depender de un endpoint extra.
 const COMPLETED_TASKS_STORAGE_KEY = 'task-manager-completed-task-ids';
 
 const getTaskId = (task) => task.id ?? task._id ?? task.taskId;
@@ -31,6 +32,7 @@ const formatDate = (date) => {
   }).format(new Date(date));
 };
 
+// Normaliza estructuras de respuesta (array directo, content o data).
 const normalizeTasks = (data) => {
   if (Array.isArray(data)) {
     return data;
@@ -63,6 +65,7 @@ const normalizePlans = (data) => {
   return [];
 };
 
+// Recupera ids completados del localStorage de forma segura.
 const getStoredCompletedTaskIds = () => {
   try {
     const storedIds = JSON.parse(localStorage.getItem(COMPLETED_TASKS_STORAGE_KEY) ?? '[]');
@@ -72,7 +75,7 @@ const getStoredCompletedTaskIds = () => {
   }
 };
 
-const ListaDeTareas = () => {
+const ListaDeTareas = ({ onEditarTarea }) => {
   const [tasks, setTasks] = useState([]);
   const [plansById, setPlansById] = useState({});
   const [completedTaskIds, setCompletedTaskIds] = useState(getStoredCompletedTaskIds);
@@ -80,6 +83,7 @@ const ListaDeTareas = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Carga tareas + planes para mostrar nombre de plan y estado de cada tarea.
   const loadTasks = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -116,6 +120,7 @@ const ListaDeTareas = () => {
     fetchTasks();
   }, [loadTasks]);
 
+  // Marca/desmarca en memoria; se persiste al presionar "Guardar cambios".
   const toggleCompleted = (taskId) => {
     setSaveMessage(null);
     setCompletedTaskIds((currentIds) => {
@@ -196,7 +201,17 @@ const ListaDeTareas = () => {
                         <h3>{task.title ?? task.name ?? 'Tarea sin título'}</h3>
                         <p>{task.description ?? task.descripcion ?? 'Sin descripción'}</p>
                       </div>
-                      <span className="task-status">{isCompleted ? 'Completada' : getStatusName(task)}</span>
+                      <div className="project-card-actions">
+                        <span className="task-status">{isCompleted ? 'Completada' : getStatusName(task)}</span>
+                        <button
+                          type="button"
+                          className="btn btn-edit-project"
+                          onClick={() => onEditarTarea?.(task)}
+                          disabled={!taskId}
+                        >
+                          Actualizar tarea
+                        </button>
+                      </div>
                     </div>
 
                     <div className="project-cta">

@@ -1,20 +1,29 @@
-import { useState, useEffect } from 'react';
-import { createPlan } from '../services/planService.js';
+import { useEffect, useState } from 'react';
+import { updatePlan } from '../services/planService.js';
 import { getStatuses } from '../services/statusService.js';
 
-// Si llega como string numérico, lo convierte a número.
-// Si no, mantiene el valor original para no perder compatibilidad.
-const normalizeProjectId = (value) => {
-  const parsed = Number(value);
-  return Number.isNaN(parsed) ? value : parsed;
+const getPlanId = (plan) => plan?.id ?? plan?._id ?? plan?.planId;
+
+const getProjectId = (plan) =>
+  plan?.projectId ?? plan?.proyectId ?? plan?.projectID ?? plan?.proyectoId;
+
+const formatInputDate = (date) => {
+  if (!date) {
+    return '';
+  }
+
+  return String(date).slice(0, 10);
 };
 
-const CrearPlan = ({ projectId, onCreated }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [statusId, setStatusId] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+const normalizeStatusId = (plan) =>
+  plan?.statusId ?? plan?.status?.id ?? plan?.status?._id ?? plan?.status?.statusId ?? '';
+
+const EditarPlan = ({ plan, onUpdated, onCancel }) => {
+  const [title, setTitle] = useState(plan?.title ?? plan?.name ?? plan?.nombre ?? '');
+  const [description, setDescription] = useState(plan?.description ?? plan?.descripcion ?? '');
+  const [statusId, setStatusId] = useState(normalizeStatusId(plan));
+  const [startDate, setStartDate] = useState(formatInputDate(plan?.startDate ?? plan?.fechaInicio));
+  const [endDate, setEndDate] = useState(formatInputDate(plan?.endDate ?? plan?.fechaFin));
   const [statuses, setStatuses] = useState([]);
   const [statusesLoading, setStatusesLoading] = useState(false);
   const [statusesError, setStatusesError] = useState(null);
@@ -22,54 +31,11 @@ const CrearPlan = ({ projectId, onCreated }) => {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    // Esta pantalla depende de un proyecto seleccionado previamente.
-    if (!projectId) {
-      setError('No se encuentra el proyecto asociado para crear el plan.');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const normalizedProjectId = normalizeProjectId(projectId);
-
-      // Construye el payload con valores opcionales solo cuando existen.
-      const planData = {
-        projectId: normalizedProjectId,
-        title,
-        description,
-        statusId: Number(statusId),
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-      };
-
-      const createdPlan = await createPlan(planData);
-      setMessage('Plan creado correctamente.');
-      setTitle('');
-      setDescription('');
-      setStatusId('');
-      setStartDate('');
-      setEndDate('');
-
-      if (onCreated) {
-        onCreated(createdPlan.id ?? createdPlan._id ?? createdPlan.planId);
-      }
-    } catch (err) {
-      setError(err.message || 'No se pudo crear el plan.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    // Carga catálogo de status para llenar el select del formulario.
     const fetchStatuses = async () => {
       setStatusesLoading(true);
       setStatusesError(null);
+
       try {
         const data = await getStatuses();
         setStatuses(Array.isArray(data) ? data : []);
@@ -83,10 +49,54 @@ const CrearPlan = ({ projectId, onCreated }) => {
     fetchStatuses();
   }, []);
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const planId = getPlanId(plan);
+      const planData = {
+        projectId: getProjectId(plan),
+        title,
+        description,
+        statusId: Number(statusId),
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      };
+
+      const updatedPlan = await updatePlan(planId, planData);
+      setMessage('Plan actualizado correctamente.');
+
+      if (onUpdated) {
+        onUpdated(updatedPlan.id ?? updatedPlan._id ?? updatedPlan.planId ?? planId);
+      }
+    } catch (err) {
+      setError(err.message || 'No se pudo actualizar el plan.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!plan) {
+    return (
+      <main>
+        <h1>Actualizar plan</h1>
+        <p>No se seleccionó un plan para actualizar.</p>
+        {onCancel && (
+          <button type="button" className="btn btn-primary" onClick={onCancel}>
+            Volver a planes
+          </button>
+        )}
+      </main>
+    );
+  }
+
   return (
     <main>
-      <h1>Crear nuevo plan</h1>
-      <p>Proyecto asociado: {projectId ?? 'N/A'}</p>
+      <h1>Actualizar plan</h1>
+      <p>Proyecto asociado: {getProjectId(plan) ?? 'N/A'}</p>
       <form className="page-form" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="title">Título del plan *</label>
@@ -151,9 +161,16 @@ const CrearPlan = ({ projectId, onCreated }) => {
           />
         </div>
 
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Guardando...' : 'Guardar plan'}
-        </button>
+        <div className="form-actions">
+          {onCancel && (
+            <button type="button" className="btn btn-tertiary" onClick={onCancel} disabled={loading}>
+              Cancelar
+            </button>
+          )}
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Guardando...' : 'Actualizar plan'}
+          </button>
+        </div>
       </form>
 
       {message && <p style={{ color: 'green' }}>{message}</p>}
@@ -162,4 +179,4 @@ const CrearPlan = ({ projectId, onCreated }) => {
   );
 };
 
-export default CrearPlan;
+export default EditarPlan;

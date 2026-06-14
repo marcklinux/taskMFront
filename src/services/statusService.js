@@ -1,5 +1,6 @@
 const API_BASE_URL = 'http://localhost:8080/api/status';
 
+// Recupera el catálogo de status para formularios y listados.
 export const getStatuses = async () => {
   const response = await fetch(API_BASE_URL);
   if (!response.ok) {

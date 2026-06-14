@@ -1,12 +1,26 @@
 import { useEffect, useState } from 'react';
 import { getProjects } from '../services/projectService.js';
 
+// Normaliza ids con nombres distintos según respuesta del backend.
+const getProjectId = (project) =>
+  project?.id ?? project?._id ?? project?.projectId ?? project?.proyectId ?? project?.projectID;
+
+// Evita errores cuando status viene como objeto, string o nulo.
+const getStatusName = (project) =>
+  project?.status?.name ??
+  project?.status?.nombre ??
+  project?.statusName ??
+  project?.status ??
+  project?.estado ??
+  'Sin status';
+
 const ListaDeProyectos = ({ onAgregarPlan, onEditarProyecto, onNuevoProyecto }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Carga inicial del listado al montar la vista.
     const fetchProjects = async () => {
       setLoading(true);
       setError(null);
@@ -41,12 +55,12 @@ const ListaDeProyectos = ({ onAgregarPlan, onEditarProyecto, onNuevoProyecto }) 
         {!loading && !error && projects.length === 0 && <p>No hay proyectos disponibles.</p>}
         <div className="task-list">
           {projects.map((project) => (
-            <article key={project.id ?? project._id ?? project.name} className="task-card">
+            <article key={getProjectId(project) ?? project.name} className="task-card">
               <div className="project-card-header">
                 <div>
                   <h3>{project.name ?? project.nombre ?? 'Proyecto sin nombre'}</h3>
                   <p>{project.description ?? project.descripcion ?? 'Sin descripción'}</p>
-                  <p>Estado:{project.status.name}</p>
+                  <p>Estado: {getStatusName(project)}</p>
                 </div>
                 <div className="project-card-actions">
                   <button
@@ -59,7 +73,7 @@ const ListaDeProyectos = ({ onAgregarPlan, onEditarProyecto, onNuevoProyecto }) 
                   <button
                     type="button"
                     className="btn btn-primary btn-plan"
-                    onClick={() => onAgregarPlan(project.id ?? project._id)}
+                    onClick={() => onAgregarPlan(getProjectId(project))}
                   >
                     + Agregar plan
                   </button>

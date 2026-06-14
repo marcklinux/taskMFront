@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getPlans } from '../services/planService.js';
 
+// Helpers para soportar respuestas con distintos nombres de propiedad.
 const getPlanId = (plan) => plan.id ?? plan._id ?? plan.planId;
 
 const getProjectId = (plan) =>
@@ -18,6 +19,7 @@ const formatDate = (date) => {
   }).format(new Date(date));
 };
 
+// Normaliza diferentes estructuras de respuesta del backend.
 const normalizePlans = (data) => {
   if (Array.isArray(data)) {
     return data;
@@ -34,12 +36,13 @@ const normalizePlans = (data) => {
   return [];
 };
 
-const ListaDePlanes = ({ onNuevaTarea }) => {
+const ListaDePlanes = ({ onNuevaTarea, onEditarPlan }) => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Carga inicial de planes al montar la vista.
     const fetchPlans = async () => {
       setLoading(true);
       setError(null);
@@ -85,14 +88,24 @@ const ListaDePlanes = ({ onNuevaTarea }) => {
                     <p>{plan.description ?? plan.descripcion ?? 'Sin descripción'}</p>
                   </div>
 
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-plan"
-                    onClick={() => onNuevaTarea?.(planId)}
-                    disabled={!planId}
-                  >
-                    + Nueva tarea
-                  </button>
+                  <div className="project-card-actions">
+                    <button
+                      type="button"
+                      className="btn btn-edit-project"
+                      onClick={() => onEditarPlan?.(plan)}
+                      disabled={!planId}
+                    >
+                      Actualizar plan
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-plan"
+                      onClick={() => onNuevaTarea?.(planId)}
+                      disabled={!planId}
+                    >
+                      + Nueva tarea
+                    </button>
+                  </div>
                 </div>
 
                 <div className="project-cta">

@@ -1,5 +1,6 @@
 const API_BASE_URL = 'http://localhost:8080/api/proyectos';
 
+// Obtiene todos los proyectos disponibles.
 export const getProjects = async () => {
   const response = await fetch(API_BASE_URL);
   if (!response.ok) {
@@ -8,6 +9,7 @@ export const getProjects = async () => {
   return response.json();
 };
 
+// Crea un proyecto nuevo con el payload recibido del formulario.
 export const createProject = async (projectData) => {
   const response = await fetch(API_BASE_URL, {
     method: 'POST',
@@ -24,6 +26,7 @@ export const createProject = async (projectData) => {
   return response.json();
 };
 
+// Actualiza un proyecto existente por id.
 export const updateProject = async (projectId, projectData) => {
   const response = await fetch(`${API_BASE_URL}/${projectId}`, {
     method: 'PUT',

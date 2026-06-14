@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { getPlans } from '../services/planService.js';
-import { createTask } from '../services/taskService.js';
 import { getStatuses } from '../services/statusService.js';
+import { updateTask } from '../services/taskService.js';
 
-// Normaliza respuesta de planes desde distintos formatos de backend.
+const getTaskId = (task) => task?.id ?? task?._id ?? task?.taskId;
+
+const getPlanId = (task) => task?.planId ?? task?.planID ?? task?.plan?.id ?? task?.plan?._id ?? '';
+
 const normalizePlans = (data) => {
   if (Array.isArray(data)) {
     return data;
@@ -20,15 +23,26 @@ const normalizePlans = (data) => {
   return [];
 };
 
+const formatInputDate = (date) => {
+  if (!date) {
+    return '';
+  }
+
+  return String(date).slice(0, 10);
+};
+
+const normalizeStatusId = (task) =>
+  task?.statusId ?? task?.status?.id ?? task?.status?._id ?? task?.status?.statusId ?? '';
+
 const getPlanTitle = (plan) =>
   plan.title ?? plan.name ?? plan.nombre ?? plan.description ?? plan.descripcion ?? 'Plan sin título';
 
-const CrearTareas = ({ initialPlanId }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [statusId, setStatusId] = useState('');
-  const [planId, setPlanId] = useState(initialPlanId || '');
-  const [taskDate, setTaskDate] = useState('');
+const EditarTarea = ({ task, onUpdated, onCancel }) => {
+  const [title, setTitle] = useState(task?.title ?? task?.name ?? task?.nombre ?? '');
+  const [description, setDescription] = useState(task?.description ?? task?.descripcion ?? '');
+  const [statusId, setStatusId] = useState(normalizeStatusId(task));
+  const [planId, setPlanId] = useState(getPlanId(task));
+  const [taskDate, setTaskDate] = useState(formatInputDate(task?.taskDate ?? task?.date ?? task?.fechaTarea));
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(false);
   const [plansError, setPlansError] = useState(null);
@@ -40,7 +54,6 @@ const CrearTareas = ({ initialPlanId }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Carga en paralelo status y planes para los select del formulario.
     const fetchFormOptions = async () => {
       setStatusesLoading(true);
       setStatusesError(null);
@@ -64,7 +77,6 @@ const CrearTareas = ({ initialPlanId }) => {
     fetchFormOptions();
   }, []);
 
-  // Crea la tarea con los datos del formulario y reinicia campos al finalizar.
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -72,6 +84,7 @@ const CrearTareas = ({ initialPlanId }) => {
     setMessage(null);
 
     try {
+      const taskId = getTaskId(task);
       const taskData = {
         title,
         description,
@@ -80,23 +93,36 @@ const CrearTareas = ({ initialPlanId }) => {
         taskDate: taskDate || undefined,
       };
 
-      await createTask(taskData);
-      setMessage('Tarea creada correctamente.');
-      setTitle('');
-      setDescription('');
-      setStatusId('');
-      setPlanId(initialPlanId || '');
-      setTaskDate('');
+      const updatedTask = await updateTask(taskId, taskData);
+      setMessage('Tarea actualizada correctamente.');
+
+      if (onUpdated) {
+        onUpdated(updatedTask.id ?? updatedTask._id ?? updatedTask.taskId ?? taskId);
+      }
     } catch (err) {
-      setError(err.message || 'No se pudo crear la tarea.');
+      setError(err.message || 'No se pudo actualizar la tarea.');
     } finally {
       setLoading(false);
     }
   };
 
+  if (!task) {
+    return (
+      <main>
+        <h1>Actualizar tarea</h1>
+        <p>No se seleccionó una tarea para actualizar.</p>
+        {onCancel && (
+          <button type="button" className="btn btn-primary" onClick={onCancel}>
+            Volver a tareas
+          </button>
+        )}
+      </main>
+    );
+  }
+
   return (
     <main>
-      <h1>Crear tareas</h1>
+      <h1>Actualizar tarea</h1>
       <form className="page-form" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="title">Título *</label>
@@ -155,12 +181,12 @@ const CrearTareas = ({ initialPlanId }) => {
               required
             >
               <option value="">Seleccione un plan</option>
-              {plans.map((plan) => {
-                const optionPlanId = plan.id ?? plan._id ?? plan.planId;
+              {plans.map((planOption) => {
+                const optionPlanId = planOption.id ?? planOption._id ?? planOption.planId;
 
                 return (
                   <option key={optionPlanId} value={optionPlanId}>
-                    {getPlanTitle(plan)}
+                    {getPlanTitle(planOption)}
                   </option>
                 );
               })}
@@ -178,9 +204,16 @@ const CrearTareas = ({ initialPlanId }) => {
           />
         </div>
 
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Guardando...' : 'Guardar tarea'}
-        </button>
+        <div className="form-actions">
+          {onCancel && (
+            <button type="button" className="btn btn-tertiary" onClick={onCancel} disabled={loading}>
+              Cancelar
+            </button>
+          )}
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Guardando...' : 'Guardar tarea'}
+          </button>
+        </div>
       </form>
 
       {message && <p style={{ color: 'green' }}>{message}</p>}
@@ -189,4 +222,4 @@ const CrearTareas = ({ initialPlanId }) => {
   );
 };
 
-export default CrearTareas;
+export default EditarTarea;

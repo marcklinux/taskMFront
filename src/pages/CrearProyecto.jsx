@@ -16,6 +16,7 @@ const CrearProyecto = ({ onCreated }) => {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
+  // Envía el proyecto al backend y limpia el formulario en caso de éxito.
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -52,6 +53,7 @@ const CrearProyecto = ({ onCreated }) => {
   };
 
   useEffect(() => {
+    // Carga el catálogo de status para llenar el select inicial.
     const fetchStatuses = async () => {
       setStatusesLoading(true);
       setStatusesError(null);

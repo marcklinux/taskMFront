@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { updateProject } from '../services/projectService.js';
 import { getStatuses } from '../services/statusService.js';
 
+// Permite obtener el id aunque cambie el nombre de la propiedad.
 const getProjectId = (project) => project?.id ?? project?._id ?? project?.projectId;
 
+// Ajusta fechas para el input type="date" (YYYY-MM-DD).
 const formatInputDate = (date) => {
   if (!date) {
     return '';
@@ -29,6 +31,7 @@ const EditarProyecto = ({ project, onUpdated, onCancel }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Carga catálogo de status para editar el estado del proyecto.
     const fetchStatuses = async () => {
       setStatusesLoading(true);
       setStatusesError(null);
@@ -46,6 +49,7 @@ const EditarProyecto = ({ project, onUpdated, onCancel }) => {
     fetchStatuses();
   }, []);
 
+  // Envía los cambios al backend usando el id normalizado.
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
