@@ -53,22 +53,22 @@ const EditarProyecto = ({ project, onUpdated, onCancel }) => {
     fetchStatuses();
   }, []);
 
-  // Carga el catálogo de periodos para editar el periodo del proyecto.
-  const fetchPeriodos = async () => {
-    setPeriodosLoading(true);
-    setPeriodosError(null);
-
-    try {
-      const data = await getPeriodos();
-      setPeriodos(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setPeriodosError(err.message || 'No se pudieron cargar los periodos.');
-    } finally {
-      setPeriodosLoading(false);
-    }
-  };
-
   useEffect(() => {
+    // Carga el catálogo de periodos para editar el periodo del proyecto.
+    const fetchPeriodos = async () => {
+      setPeriodosLoading(true);
+      setPeriodosError(null);
+
+      try {
+        const data = await getPeriodos();
+        setPeriodos(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setPeriodosError(err.message || 'No se pudieron cargar los periodos.');
+      } finally {
+        setPeriodosLoading(false);
+      }
+    };
+
     fetchPeriodos();
   }, []);
 

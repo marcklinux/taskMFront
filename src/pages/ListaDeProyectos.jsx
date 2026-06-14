@@ -5,6 +5,11 @@ import { getProjects } from '../services/projectService.js';
 const getProjectId = (project) =>
   project?.id ?? project?._id ?? project?.projectId ?? project?.proyectId ?? project?.projectID;
 
+const getStatusId = (project) =>
+  project?.statusId ?? project?.status?.id ?? project?.status?._id ?? project?.status?.statusId;
+
+const isCompletedProject = (project) => Number(getStatusId(project)) === 4;
+
 // Evita errores cuando status viene como objeto, string o nulo.
 const getStatusName = (project) =>
   project?.status?.name ??
@@ -27,7 +32,8 @@ const ListaDeProyectos = ({ onAgregarPlan, onEditarProyecto, onNuevoProyecto }) 
 
       try {
         const data = await getProjects();
-        setProjects(Array.isArray(data) ? data : []);
+        const normalizedProjects = Array.isArray(data) ? data : [];
+        setProjects(normalizedProjects.filter((project) => !isCompletedProject(project)));
       } catch (err) {
         setError(err.message || 'No se pudo cargar la lista de proyectos.');
       } finally {

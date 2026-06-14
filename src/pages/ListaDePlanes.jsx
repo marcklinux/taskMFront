@@ -4,8 +4,18 @@ import { getPlans } from '../services/planService.js';
 // Helpers para soportar respuestas con distintos nombres de propiedad.
 const getPlanId = (plan) => plan.id ?? plan._id ?? plan.planId;
 
-const getProjectId = (plan) =>
-  plan.projectId ?? plan.proyectId ?? plan.projectID ?? plan.proyectoId;
+const getStatusId = (plan) =>
+  plan?.statusId ?? plan?.status?.id ?? plan?.status?._id ?? plan?.status?.statusId;
+
+const getStatusName = (plan) =>
+  plan?.status?.name ??
+  plan?.status?.nombre ??
+  plan?.statusName ??
+  plan?.status ??
+  plan?.estado ??
+  'Sin estado';
+
+const isCompletedPlan = (plan) => Number(getStatusId(plan)) === 4;
 
 const formatDate = (date) => {
   if (!date) {
@@ -49,7 +59,7 @@ const ListaDePlanes = ({ onNuevaTarea, onEditarPlan }) => {
 
       try {
         const data = await getPlans();
-        setPlans(normalizePlans(data));
+        setPlans(normalizePlans(data).filter((plan) => !isCompletedPlan(plan)));
       } catch (err) {
         setError(err.message || 'No se pudo cargar la lista de planes.');
         setPlans([]);
@@ -78,7 +88,6 @@ const ListaDePlanes = ({ onNuevaTarea, onEditarPlan }) => {
         <div className="task-list">
           {plans.map((plan) => {
             const planId = getPlanId(plan);
-            const projectId = getProjectId(plan);
 
             return (
               <article key={planId ?? plan.title ?? plan.name} className="task-card">
@@ -86,7 +95,7 @@ const ListaDePlanes = ({ onNuevaTarea, onEditarPlan }) => {
                   <div>
                     <h3>{plan.title ?? plan.name ?? 'Plan sin título'}</h3>
                     <p>{plan.description ?? plan.descripcion ?? 'Sin descripción'}</p>
-                    <p>Estado: {plan.status.name ?? plan.estado ?? 'Sin estado'}</p>
+                    <p>Estado: {getStatusName(plan)}</p>
                   </div>
 
                   <div className="project-card-actions">

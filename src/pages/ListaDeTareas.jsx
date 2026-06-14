@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getPlans } from '../services/planService.js';
-import { getTasks } from '../services/taskService.js';
+import { getTasks, updateTask } from '../services/taskService.js';
 
-// Guarda tareas completadas localmente para no depender de un endpoint extra.
-const COMPLETED_TASKS_STORAGE_KEY = 'task-manager-completed-task-ids';
+const COMPLETED_STATUS_ID = 4;
 
 const getTaskId = (task) => task.id ?? task._id ?? task.taskId;
 
 const getPlanId = (task) => task.planId ?? task.planID ?? task.plan?.id ?? task.plan?._id;
+
+const getStatusId = (task) =>
+  task.statusId ?? task.status?.id ?? task.status?._id ?? task.status?.statusId;
+
+const isCompletedTask = (task) => Number(getStatusId(task)) === COMPLETED_STATUS_ID;
 
 const getPlanTitle = (plan) =>
   plan.title ?? plan.name ?? plan.nombre ?? plan.description ?? plan.descripcion ?? 'Plan sin título';
@@ -65,21 +69,12 @@ const normalizePlans = (data) => {
   return [];
 };
 
-// Recupera ids completados del localStorage de forma segura.
-const getStoredCompletedTaskIds = () => {
-  try {
-    const storedIds = JSON.parse(localStorage.getItem(COMPLETED_TASKS_STORAGE_KEY) ?? '[]');
-    return new Set(Array.isArray(storedIds) ? storedIds : []);
-  } catch {
-    return new Set();
-  }
-};
-
 const ListaDeTareas = ({ onEditarTarea }) => {
   const [tasks, setTasks] = useState([]);
   const [plansById, setPlansById] = useState({});
-  const [completedTaskIds, setCompletedTaskIds] = useState(getStoredCompletedTaskIds);
-  const [saveMessage, setSaveMessage] = useState(null);
+  const [statusMessage, setStatusMessage] = useState(null);
+  const [isToastVisible, setIsToastVisible] = useState(false);
+  const [updatingTaskId, setUpdatingTaskId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -87,12 +82,14 @@ const ListaDeTareas = ({ onEditarTarea }) => {
   const loadTasks = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setStatusMessage(null);
+    setIsToastVisible(false);
 
     try {
       const [tasksData, plansData] = await Promise.all([getTasks(), getPlans()]);
       const normalizedPlans = normalizePlans(plansData);
 
-      setTasks(normalizeTasks(tasksData));
+      setTasks(normalizeTasks(tasksData).filter((task) => !isCompletedTask(task)));
       setPlansById(
         normalizedPlans.reduce((plansMap, plan) => {
           const planId = plan.id ?? plan._id ?? plan.planId;
@@ -120,54 +117,76 @@ const ListaDeTareas = ({ onEditarTarea }) => {
     fetchTasks();
   }, [loadTasks]);
 
-  // Marca/desmarca en memoria; se persiste al presionar "Guardar cambios".
-  const toggleCompleted = (taskId) => {
-    setSaveMessage(null);
-    setCompletedTaskIds((currentIds) => {
-      const nextIds = new Set(currentIds);
+  useEffect(() => {
+    if (!statusMessage) {
+      return;
+    }
 
-      if (nextIds.has(taskId)) {
-        nextIds.delete(taskId);
-      } else {
-        nextIds.add(taskId);
-      }
+    const hideTimerId = setTimeout(() => {
+      setIsToastVisible(false);
+    }, 2200);
 
-      return nextIds;
-    });
-  };
+    const clearTimerId = setTimeout(() => {
+      setStatusMessage(null);
+    }, 2600);
 
-  const handleSaveCompletedTasks = () => {
-    localStorage.setItem(
-      COMPLETED_TASKS_STORAGE_KEY,
-      JSON.stringify(Array.from(completedTaskIds)),
-    );
-    setSaveMessage('Cambios guardados correctamente.');
+    return () => {
+      clearTimeout(hideTimerId);
+      clearTimeout(clearTimerId);
+    };
+  }, [statusMessage]);
+
+  const handleCompleteTask = async (task) => {
+    const taskId = getTaskId(task);
+
+    if (!taskId) {
+      return;
+    }
+
+    setUpdatingTaskId(taskId);
+    setError(null);
+    setStatusMessage(null);
+
+    try {
+      const taskPayload = {
+        title: task.title ?? task.name ?? '',
+        description: task.description ?? task.descripcion ?? '',
+        planId: Number(getPlanId(task)),
+        taskDate: task.taskDate ?? task.date ?? task.fechaTarea ?? undefined,
+        statusId: COMPLETED_STATUS_ID,
+      };
+
+      await updateTask(taskId, taskPayload);
+      setTasks((currentTasks) => currentTasks.filter((currentTask) => getTaskId(currentTask) !== taskId));
+      setIsToastVisible(true);
+      setStatusMessage('Tarea finalizada correctamente.');
+    } catch (err) {
+      setError(err.message || 'No se pudo actualizar la tarea.');
+    } finally {
+      setUpdatingTaskId(null);
+    }
   };
 
   return (
     <main>
+      {statusMessage && (
+        <div className={`task-toast ${isToastVisible ? 'task-toast-visible' : 'task-toast-hidden'}`}>
+          {statusMessage}
+        </div>
+      )}
       <section className="project-list">
         <div className="project-list-header">
           <div>
             <h1>Tareas</h1>
-            <p>Consulta todas las tareas registradas.</p>
+            <p>Consulta tareas pendientes y márcalas como finalizadas.</p>
           </div>
           <div className="task-list-actions">
             <button type="button" className="btn btn-tertiary" onClick={loadTasks} disabled={loading}>
               Actualizar
             </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleSaveCompletedTasks}
-              disabled={loading}
-            >
-              Guardar cambios
-            </button>
           </div>
         </div>
 
-        {saveMessage && <p style={{ color: 'green' }}>{saveMessage}</p>}
         {loading && <p>Cargando tareas...</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}
         {!loading && !error && tasks.length === 0 && <p>No hay tareas disponibles.</p>}
@@ -178,21 +197,18 @@ const ListaDeTareas = ({ onEditarTarea }) => {
             const planId = getPlanId(task);
             const planTitle = task.plan?.title ?? task.plan?.name ?? plansById[String(planId)];
             const taskKey = taskId ?? task.title ?? task.name;
-            const isCompleted = completedTaskIds.has(taskKey);
 
             return (
-              <article
-                key={taskKey}
-                className={`task-card ${isCompleted ? 'task-card-completed' : ''}`}
-              >
+              <article key={taskKey} className="task-card">
                 <div className="task-row">
                   <label className="task-checkbox">
                     <input
                       type="checkbox"
-                      checked={isCompleted}
-                      onChange={() => toggleCompleted(taskKey)}
+                      checked={false}
+                      onChange={() => handleCompleteTask(task)}
+                      disabled={!taskId || updatingTaskId === taskId}
                     />
-                    <span>Marcar tarea como completada</span>
+                    <span>Marcar tarea como finalizada</span>
                   </label>
 
                   <div className="task-card-content">
@@ -202,12 +218,12 @@ const ListaDeTareas = ({ onEditarTarea }) => {
                         <p>{task.description ?? task.descripcion ?? 'Sin descripción'}</p>
                       </div>
                       <div className="project-card-actions">
-                        <span className="task-status">{isCompleted ? 'Completada' : getStatusName(task)}</span>
+                        <span className="task-status">{getStatusName(task)}</span>
                         <button
                           type="button"
                           className="btn btn-edit-project"
                           onClick={() => onEditarTarea?.(task)}
-                          disabled={!taskId}
+                          disabled={!taskId || updatingTaskId === taskId}
                         >
                           Actualizar tarea
                         </button>
