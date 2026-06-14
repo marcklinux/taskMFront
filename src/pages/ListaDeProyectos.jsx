@@ -46,6 +46,7 @@ const ListaDeProyectos = ({ onAgregarPlan, onEditarProyecto, onNuevoProyecto }) 
                 <div>
                   <h3>{project.name ?? project.nombre ?? 'Proyecto sin nombre'}</h3>
                   <p>{project.description ?? project.descripcion ?? 'Sin descripción'}</p>
+                  <p>Estado:{project.status.name}</p>
                 </div>
                 <div className="project-card-actions">
                   <button

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getPlanst } from '../services/planService.js';
+import { getPlans } from '../services/planService.js';
 
 const getPlanId = (plan) => plan.id ?? plan._id ?? plan.planId;
 
