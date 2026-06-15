@@ -35,6 +35,7 @@ function App() {
   // Mensaje temporal para confirmar acciones al usuario.
   const [flashMessage, setFlashMessage] = useState(null)
 
+  // Navega a creación de tarea. Si viene planId, preselecciona ese plan.
   const handleMostrarCrearTareas = (planId = '') => {
     setSelectedPlanId(planId)
     setView('crearTareas')

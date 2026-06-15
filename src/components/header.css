@@ -29,6 +29,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .btn {
@@ -77,10 +79,32 @@
     flex-direction: column;
     align-items: stretch;
     text-align: left;
+    padding: 16px;
   }
 
   .header-actions {
     justify-content: flex-start;
     margin-top: 12px;
+    gap: 8px;
+  }
+
+  .header-actions .btn {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-brand h1 {
+    font-size: 22px;
+  }
+
+  .header-brand p {
+    font-size: 13px;
+  }
+
+  .header-actions .btn {
+    flex: 1 1 100%;
+    min-width: 0;
   }
 }

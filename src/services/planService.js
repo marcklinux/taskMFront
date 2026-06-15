@@ -30,6 +30,7 @@ const buildPlanPayload = (planData) => {
   };
 };
 
+// Obtiene todos los planes para listados y selects.
 export const getPlans = async () => {
     const response = await fetch(API_BASE_URL);
     if (!response.ok) {
@@ -58,6 +59,7 @@ export const createPlan = async (planData) => {
   });
 
   if (!response.ok) {
+    // Se intenta leer el cuerpo del error para mostrar un mensaje más útil.
     const errorText = await response.text();
     throw new Error(`Error al crear el plan: ${errorText || response.statusText}`);
   }
@@ -67,6 +69,8 @@ export const createPlan = async (planData) => {
 
 // Actualiza un plan existente por id.
 export const updatePlan = async (planIdOrData, planData) => {
+  // Permite usar la función con firma flexible:
+  // updatePlan(planId, data) o updatePlan(planConDatos).
   const resolvedPlanId =
     typeof planIdOrData === 'object' ? getPlanId(planIdOrData) : planIdOrData;
   const resolvedPlanData = typeof planIdOrData === 'object' ? planIdOrData : planData;
@@ -82,6 +86,7 @@ export const updatePlan = async (planIdOrData, planData) => {
   });
 
   if (!response.ok) {
+    // Se intenta leer el cuerpo del error para depuración de validaciones backend.
     const errorText = await response.text();
     throw new Error(`Error al actualizar el plan: ${errorText || response.statusText}`);
   }

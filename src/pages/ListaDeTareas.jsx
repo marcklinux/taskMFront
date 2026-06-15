@@ -11,6 +11,7 @@ const getPlanId = (task) => task.planId ?? task.planID ?? task.plan?.id ?? task.
 const getStatusId = (task) =>
   task.statusId ?? task.status?.id ?? task.status?._id ?? task.status?.statusId;
 
+// Una tarea se considera finalizada cuando su statusId es 4.
 const isCompletedTask = (task) => Number(getStatusId(task)) === COMPLETED_STATUS_ID;
 
 const getPlanTitle = (plan) =>
@@ -118,6 +119,7 @@ const ListaDeTareas = ({ onEditarTarea }) => {
   }, [loadTasks]);
 
   useEffect(() => {
+    // Controla la animación del toast de confirmación y su limpieza automática.
     if (!statusMessage) {
       return;
     }
@@ -148,6 +150,7 @@ const ListaDeTareas = ({ onEditarTarea }) => {
     setStatusMessage(null);
 
     try {
+      // Se actualiza el status en backend y luego se elimina de la lista local.
       const taskPayload = {
         title: task.title ?? task.name ?? '',
         description: task.description ?? task.descripcion ?? '',

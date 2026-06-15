@@ -40,6 +40,7 @@ const EditarPlan = ({ plan, onUpdated, onCancel }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Carga catálogo de status para el select de actualización.
     const fetchStatuses = async () => {
       setStatusesLoading(true);
       setStatusesError(null);
@@ -65,6 +66,7 @@ const EditarPlan = ({ plan, onUpdated, onCancel }) => {
 
     try {
       const planId = getPlanId(plan);
+      // Payload mínimo para actualizar el plan respetando contrato backend.
       const planData = {
         projectId: getProjectId(plan),
         title,

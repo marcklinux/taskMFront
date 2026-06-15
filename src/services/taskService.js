@@ -48,6 +48,8 @@ export const createTask = async (taskData) => {
 
 // Actualiza una tarea existente por id.
 export const updateTask = async (taskIdOrData, taskData) => {
+  // Permite invocar con firma flexible:
+  // updateTask(taskId, data) o updateTask(taskConDatos).
   const resolvedTaskId = typeof taskIdOrData === 'object' ? getTaskId(taskIdOrData) : taskIdOrData;
   const resolvedTaskData = typeof taskIdOrData === 'object' ? taskIdOrData : taskData;
 

@@ -59,6 +59,7 @@
   display: flex;
   align-items: flex-start;
   gap: 16px;
+  min-width: 0;
 }
 
 .task-card-content {
@@ -101,6 +102,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
+  min-width: 0;
 }
 
 .project-card-actions,
@@ -168,12 +170,16 @@
   margin: 0 0 8px;
   font-size: 20px;
   color: #1e3a8a;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .task-card p {
   margin: 0;
   color: #334155;
   font-size: 14px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .page-form {
@@ -195,7 +201,8 @@
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   max-width: 100%;
   border: 1px solid rgba(15, 23, 42, 0.12);
@@ -204,6 +211,18 @@ textarea {
   background: #ffffff;
   color: #0f172a;
   font-size: 14px;
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #475569 50%),
+    linear-gradient(135deg, #475569 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
 }
 
 textarea {
@@ -217,6 +236,7 @@ button {
   padding: 10px 18px;
   font-size: 14px;
   cursor: pointer;
+  max-width: 100%;
 }
 
 .flash-message {
@@ -262,6 +282,126 @@ button {
   .app-content {
     display: flex;
     flex-direction: column;
-    padding: 16px 16px 32px;
+    padding: 16px 14px 28px;
+  }
+
+  .project-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .project-card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .project-card-actions,
+  .task-list-actions,
+  .form-actions {
+    justify-content: flex-start;
+  }
+
+  .project-card-actions .btn,
+  .task-list-actions .btn,
+  .form-actions .btn {
+    width: auto;
+  }
+
+  .task-row {
+    gap: 12px;
+  }
+
+  .task-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .task-card h3 {
+    font-size: 18px;
+  }
+
+  .task-card p,
+  .project-cta {
+    font-size: 13px;
+  }
+
+  .page-form {
+    gap: 14px;
+  }
+
+  .flash-message {
+    margin-inline: 0;
+    font-size: 14px;
+  }
+
+  .page-form {
+    max-width: 100%;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  .task-toast {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-content {
+    padding: 12px 10px 20px;
+  }
+
+  .task-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .project-list-header h1 {
+    font-size: 24px;
+  }
+
+  .project-list-header p {
+    font-size: 13px;
+  }
+
+  .task-checkbox {
+    width: 22px;
+    height: 22px;
+  }
+
+  .task-checkbox input {
+    width: 18px;
+    height: 18px;
+  }
+
+  .btn,
+  button {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .task-status {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .task-status {
+    align-self: flex-start;
+  }
+
+  .project-card-actions,
+  .task-list-actions,
+  .form-actions {
+    width: 100%;
+    gap: 8px;
   }
 }

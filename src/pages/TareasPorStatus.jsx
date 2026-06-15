@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getStatuses } from '../services/statusService.js';
 import { getTasksByStatus } from '../services/taskService.js';
 
+// Helpers para tolerar respuestas heterogéneas del backend.
 const getTaskId = (task) => task.id ?? task._id ?? task.taskId;
 
 const getStatusName = (task) =>
@@ -49,6 +50,7 @@ const TareasPorStatus = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Carga inicial del catálogo de status para poblar el select.
     const fetchStatuses = async () => {
       setStatusesLoading(true);
       setError(null);
@@ -66,6 +68,7 @@ const TareasPorStatus = () => {
     fetchStatuses();
   }, []);
 
+  // Cada cambio de select consulta al endpoint /tasks/status/{id}.
   const handleStatusChange = async (event) => {
     const statusId = event.target.value;
     setSelectedStatusId(statusId);
@@ -90,6 +93,7 @@ const TareasPorStatus = () => {
   };
 
   const handleClearFilter = () => {
+    // Restablece pantalla al estado inicial (sin filtro aplicado).
     setSelectedStatusId('');
     setTasks([]);
     setError(null);
