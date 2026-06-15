@@ -1,6 +1,13 @@
 import './header.css'
 
-const Header = ({ onVerProyectos, onVerPlanes, onVerTareas, onNuevaTarea, onNuevoProyecto }) => {
+const Header = ({
+  onVerProyectos,
+  onVerPlanes,
+  onVerTareas,
+  onVerTareasPorStatus,
+  onNuevaTarea,
+  onNuevoProyecto,
+}) => {
   return (
     <header className="app-header">
       <div className="header-brand">
@@ -16,6 +23,9 @@ const Header = ({ onVerProyectos, onVerPlanes, onVerTareas, onNuevaTarea, onNuev
         </button>
         <button type="button" className="btn btn-tertiary" onClick={onVerTareas}>
           Listado de tareas
+        </button>
+        <button type="button" className="btn btn-tertiary" onClick={onVerTareasPorStatus}>
+          Tareas por status
         </button>
         <button type="button" className="btn btn-secondary" onClick={onNuevoProyecto}>
           + Crear proyecto

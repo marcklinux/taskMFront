@@ -11,6 +11,7 @@ import EditarPlan from './pages/EditarPlan'
 import ListaDePlanes from './pages/ListaDePlanes'
 import ListaDeTareas from './pages/ListaDeTareas'
 import EditarTarea from './pages/EditarTarea'
+import TareasPorStatus from './pages/TareasPorStatus'
 
 // Normaliza el identificador del proyecto porque el backend puede devolver
 // distintos nombres de propiedad según el endpoint.
@@ -58,6 +59,10 @@ function App() {
   const handleMostrarListaTareas = () => {
     setSelectedTask(null)
     setView('listaTareas')
+  }
+
+  const handleMostrarTareasPorStatus = () => {
+    setView('tareasPorStatus')
   }
 
   const handleProjectCreated = (projectId) => {
@@ -126,6 +131,7 @@ function App() {
         onVerProyectos={handleMostrarProyectos}
         onVerPlanes={handleMostrarPlanes}
         onVerTareas={handleMostrarListaTareas}
+        onVerTareasPorStatus={handleMostrarTareasPorStatus}
         onNuevoProyecto={handleMostrarNuevoProyecto}
         onNuevaTarea={() => handleMostrarCrearTareas()}
       />
@@ -138,6 +144,8 @@ function App() {
               onNuevaTarea={handleMostrarCrearTareas}
               onEditarPlan={handleMostrarEditarPlan}
             />
+          ) : view === 'tareasPorStatus' ? (
+            <TareasPorStatus />
           ) : view === 'listaTareas' ? (
             <ListaDeTareas onEditarTarea={handleMostrarEditarTarea} />
           ) : view === 'crearTareas' ? (

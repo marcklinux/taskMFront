@@ -21,6 +21,15 @@ export const getTasksByPlan = async (planId) => {
   return response.json();
 };
 
+// Obtiene tareas filtradas por status.
+export const getTasksByStatus = async (statusId) => {
+  const response = await fetch(`${API_BASE_URL}/status/${statusId}`);
+  if (!response.ok) {
+    throw new Error(`Error al obtener tareas del status ${statusId}: ${response.statusText}`);
+  }
+  return response.json();
+};
+
 // Crea una nueva tarea en el backend.
 export const createTask = async (taskData) => {
   const response = await fetch(API_BASE_URL, {
