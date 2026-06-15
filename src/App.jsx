@@ -88,7 +88,7 @@ function App() {
     setTimeout(() => setFlashMessage(null), 3000)
   }
 
-  const handleMostrarNuevoPlan = (projectId) => {
+  const handleMostrarNuevoPlan = (projectId = '') => {
     setSelectedProjectId(projectId)
     setView('nuevoPlan')
   }
@@ -134,6 +134,7 @@ function App() {
         onVerTareas={handleMostrarListaTareas}
         onVerTareasPorStatus={handleMostrarTareasPorStatus}
         onNuevoProyecto={handleMostrarNuevoProyecto}
+        onNuevoPlan={() => handleMostrarNuevoPlan()}
         onNuevaTarea={() => handleMostrarCrearTareas()}
       />
       <div className="app-content">

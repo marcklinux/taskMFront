@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPlan } from '../services/planService.js';
 import { getStatuses } from '../services/statusService.js';
+import { getProjects } from '../services/projectService.js';
 
 // Si llega como string numérico, lo convierte a número.
 // Si no, mantiene el valor original para no perder compatibilidad.
@@ -9,12 +10,29 @@ const normalizeProjectId = (value) => {
   return Number.isNaN(parsed) ? value : parsed;
 };
 
+// Helpers para extraer ID con distintos nombres de propiedad.
+const getProjectId = (project) =>
+  project?.id ?? project?._id ?? project?.projectId ?? project?.proyectId ?? project?.projectID;
+
+const getStatusIdFromProject = (project) =>
+  project?.statusId ?? project?.status?.id ?? project?.status?._id ?? project?.status?.statusId;
+
+const getProjectName = (project) =>
+  project?.name ?? project?.nombre ?? 'Proyecto sin nombre';
+
+const FINALIZED_STATUS_ID = 4;
+const STOPPED_STATUS_ID = 5;
+
 const CrearPlan = ({ projectId, onCreated }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [statusId, setStatusId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedProjectId, setSelectedProjectId] = useState(projectId || '');
+  const [projects, setProjects] = useState([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectsError, setProjectsError] = useState(null);
   const [statuses, setStatuses] = useState([]);
   const [statusesLoading, setStatusesLoading] = useState(false);
   const [statusesError, setStatusesError] = useState(null);
@@ -22,11 +40,27 @@ const CrearPlan = ({ projectId, onCreated }) => {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
+  const handleProjectChange = (event) => {
+    const projId = event.target.value;
+    setSelectedProjectId(projId);
+
+    // Busca el proyecto seleccionado para verificar su status.
+    const selected = projects.find((p) => String(getProjectId(p)) === String(projId));
+
+    // Si el proyecto está finalizado (statusId === 4), auto-asigna statusId = 5 (detenido).
+    if (selected) {
+      const projectStatus = Number(getStatusIdFromProject(selected));
+      if (projectStatus === FINALIZED_STATUS_ID) {
+        setStatusId(STOPPED_STATUS_ID.toString());
+      }
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    // Esta pantalla depende de un proyecto seleccionado previamente.
-    if (!projectId) {
-      setError('No se encuentra el proyecto asociado para crear el plan.');
+    // Valida que exista proyecto seleccionado.
+    if (!selectedProjectId) {
+      setError('Por favor selecciona un proyecto para crear el plan.');
       return;
     }
 
@@ -35,7 +69,7 @@ const CrearPlan = ({ projectId, onCreated }) => {
     setMessage(null);
 
     try {
-      const normalizedProjectId = normalizeProjectId(projectId);
+      const normalizedProjectId = normalizeProjectId(selectedProjectId);
 
       // Construye el payload con valores opcionales solo cuando existen.
       const planData = {
@@ -54,6 +88,7 @@ const CrearPlan = ({ projectId, onCreated }) => {
       setStatusId('');
       setStartDate('');
       setEndDate('');
+      setSelectedProjectId(projectId || '');
 
       if (onCreated) {
         onCreated(createdPlan.id ?? createdPlan._id ?? createdPlan.planId);
@@ -64,6 +99,25 @@ const CrearPlan = ({ projectId, onCreated }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Carga proyectos disponibles para el select si no viene preseleccionado.
+    const fetchProjects = async () => {
+      setProjectsLoading(true);
+      setProjectsError(null);
+      try {
+        const data = await getProjects();
+        const projectList = Array.isArray(data) ? data : [];
+        setProjects(projectList);
+      } catch (err) {
+        setProjectsError(err.message || 'No se pudieron cargar los proyectos.');
+      } finally {
+        setProjectsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [projectId]);
 
   useEffect(() => {
     // Carga catálogo de status para llenar el select del formulario.
@@ -86,8 +140,38 @@ const CrearPlan = ({ projectId, onCreated }) => {
   return (
     <main>
       <h1>Crear nuevo plan</h1>
-      <p>Proyecto asociado: {projectId ?? 'N/A'}</p>
+      {projectId ? (
+        <p>Proyecto asociado: {projectId}</p>
+      ) : (
+        <p style={{ color: '#666', fontStyle: 'italic' }}>Selecciona un proyecto para continuar</p>
+      )}
       <form className="page-form" onSubmit={handleSubmit}>
+        {/* Select de proyectos si no viene preseleccionado */}
+        {!projectId && (
+          <div>
+            <label htmlFor="projectIdSelect">Proyecto *</label>
+            {projectsLoading ? (
+              <p>Cargando proyectos...</p>
+            ) : projectsError ? (
+              <p style={{ color: 'red' }}>{projectsError}</p>
+            ) : (
+              <select
+                id="projectIdSelect"
+                value={selectedProjectId}
+                onChange={handleProjectChange}
+                required
+              >
+                <option value="">Selecciona un proyecto</option>
+                {projects.map((project) => (
+                  <option key={getProjectId(project)} value={getProjectId(project)}>
+                    {getProjectName(project)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
         <div>
           <label htmlFor="title">Título del plan *</label>
           <input
@@ -129,6 +213,11 @@ const CrearPlan = ({ projectId, onCreated }) => {
               ))}
             </select>
           )}
+          {statusId == STOPPED_STATUS_ID && (
+            <p style={{ color: '#007bff', fontSize: '0.9em', marginTop: '5px' }}>
+              ℹ️ Plan marcado como "Detenido" porque el proyecto está finalizado.
+            </p>
+          )}
         </div>
 
         <div>
@@ -151,7 +240,7 @@ const CrearPlan = ({ projectId, onCreated }) => {
           />
         </div>
 
-        <button type="submit" className="btn btn-primary" disabled={loading}>
+        <button type="submit" className="btn btn-primary" disabled={loading || !selectedProjectId}>
           {loading ? 'Guardando...' : 'Guardar plan'}
         </button>
       </form>

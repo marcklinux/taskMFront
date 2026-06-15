@@ -7,6 +7,7 @@ const Header = ({
   onVerTareasPorStatus,
   onNuevaTarea,
   onNuevoProyecto,
+  onNuevoPlan,
 }) => {
   return (
     <header className="app-header">
@@ -29,6 +30,9 @@ const Header = ({
         </button>
         <button type="button" className="btn btn-secondary" onClick={onNuevoProyecto}>
           + Crear proyecto
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={onNuevoPlan}>
+          + Agregar plan
         </button>
         <button type="button" className="btn btn-primary" onClick={onNuevaTarea}>
           + Crear tarea
