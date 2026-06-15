@@ -1,9 +1,16 @@
 const API_BASE_URL = 'http://localhost:8080/api/planes';
 
 // Algunos endpoints usan projectId y otros proyectId.
-// Este helper unifica el origen del id para mantener compatibilidad.
+// Cubre campos planos y el objeto anidado proyect/project que puede devolver el backend.
 const getProjectId = (planData) =>
-  planData?.projectId ?? planData?.proyectId ?? planData?.projectID ?? planData?.proyectoId;
+  planData?.projectId ??
+  planData?.proyectId ??
+  planData?.projectID ??
+  planData?.proyectoId ??
+  planData?.proyect?.id ??
+  planData?.project?.id ??
+  planData?.proyect?._id ??
+  planData?.project?._id;
 
 // Permite resolver el id del plan aunque cambie el nombre de la propiedad.
 const getPlanId = (planData) => planData?.id ?? planData?._id ?? planData?.planId;

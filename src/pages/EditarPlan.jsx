@@ -4,8 +4,16 @@ import { getStatuses } from '../services/statusService.js';
 
 const getPlanId = (plan) => plan?.id ?? plan?._id ?? plan?.planId;
 
+// Cubre tanto campos planos como el objeto anidado que devuelve el backend.
 const getProjectId = (plan) =>
-  plan?.projectId ?? plan?.proyectId ?? plan?.projectID ?? plan?.proyectoId;
+  plan?.projectId ??
+  plan?.proyectId ??
+  plan?.projectID ??
+  plan?.proyectoId ??
+  plan?.proyect?.id ??
+  plan?.project?.id ??
+  plan?.proyect?._id ??
+  plan?.project?._id;
 
 const formatInputDate = (date) => {
   if (!date) {
