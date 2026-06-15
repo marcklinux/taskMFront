@@ -32,6 +32,12 @@ export const getPlans = async () => {
 };
 
 
+// Parsea la respuesta solo si tiene cuerpo (evita fallo en 204 No Content).
+const parseResponse = async (response) => {
+  const text = await response.text();
+  return text ? JSON.parse(text) : {};
+};
+
 export const createPlan = async (planData) => {
   // Se envían ambos campos por compatibilidad con contratos antiguos/nuevos del backend.
   const payload = buildPlanPayload(planData);
@@ -45,10 +51,11 @@ export const createPlan = async (planData) => {
   });
 
   if (!response.ok) {
-    throw new Error(`Error al crear el plan: ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(`Error al crear el plan: ${errorText || response.statusText}`);
   }
 
-  return response.json();
+  return parseResponse(response);
 };
 
 // Actualiza un plan existente por id.
@@ -68,8 +75,9 @@ export const updatePlan = async (planIdOrData, planData) => {
   });
 
   if (!response.ok) {
-    throw new Error(`Error al actualizar el plan: ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(`Error al actualizar el plan: ${errorText || response.statusText}`);
   }
 
-  return response.json();
+  return parseResponse(response);
 };
