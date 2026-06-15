@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPlan } from '../services/planService.js';
 import { getStatuses } from '../services/statusService.js';
-import { getProjects } from '../services/projectService.js';
+import { getProjects, updateProject } from '../services/projectService.js';
 
 // Si llega como string numérico, lo convierte a número.
 // Si no, mantiene el valor original para no perder compatibilidad.
@@ -19,6 +19,19 @@ const getStatusIdFromProject = (project) =>
 
 const getProjectName = (project) =>
   project?.name ?? project?.nombre ?? 'Proyecto sin nombre';
+
+const getProjectDescription = (project) => project?.description ?? project?.descripcion ?? '';
+
+const getPeriodIdFromProject = (project) =>
+  project?.periodId ?? project?.period?.id ?? project?.period?._id;
+
+const formatDateForApi = (value) => {
+  if (!value) {
+    return undefined;
+  }
+
+  return String(value).slice(0, 10);
+};
 
 const FINALIZED_STATUS_ID = 4;
 const STOPPED_STATUS_ID = 5;
@@ -40,9 +53,10 @@ const CrearPlan = ({ projectId, onCreated }) => {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleProjectChange = (event) => {
+  const handleProjectChange = async (event) => {
     const projId = event.target.value;
     setSelectedProjectId(projId);
+    setError(null);
 
     // Busca el proyecto seleccionado para verificar su status.
     const selected = projects.find((p) => String(getProjectId(p)) === String(projId));
@@ -51,7 +65,40 @@ const CrearPlan = ({ projectId, onCreated }) => {
     if (selected) {
       const projectStatus = Number(getStatusIdFromProject(selected));
       if (projectStatus === FINALIZED_STATUS_ID) {
-        setStatusId(STOPPED_STATUS_ID.toString());
+        try {
+          const resolvedProjectId = getProjectId(selected);
+          const payload = {
+            name: getProjectName(selected),
+            description: getProjectDescription(selected),
+            statusId: STOPPED_STATUS_ID,
+            periodId: getPeriodIdFromProject(selected) ?? undefined,
+            startDate: formatDateForApi(selected?.startDate ?? selected?.fechaInicio),
+            endDate: formatDateForApi(selected?.endDate ?? selected?.fechaFin),
+          };
+
+          await updateProject(resolvedProjectId, payload);
+          setStatusId(STOPPED_STATUS_ID.toString());
+
+          // Actualiza el estado local para que el proyecto refleje el nuevo status.
+          setProjects((currentProjects) =>
+            currentProjects.map((projectItem) => {
+              if (String(getProjectId(projectItem)) !== String(resolvedProjectId)) {
+                return projectItem;
+              }
+
+              return {
+                ...projectItem,
+                statusId: STOPPED_STATUS_ID,
+                status: {
+                  ...(typeof projectItem?.status === 'object' ? projectItem.status : {}),
+                  id: STOPPED_STATUS_ID,
+                },
+              };
+            }),
+          );
+        } catch (updateError) {
+          setError(updateError.message || 'No se pudo actualizar el proyecto a detenido.');
+        }
       }
     }
   };
