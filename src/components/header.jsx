@@ -5,6 +5,7 @@ const Header = ({
   onVerPlanes,
   onVerTareas,
   onVerTareasPorStatus,
+  onVerTareasSemanales,
   onNuevaTarea,
   onNuevoProyecto,
   onNuevoPlan,
@@ -27,6 +28,9 @@ const Header = ({
         </button>
         <button type="button" className="btn btn-tertiary" onClick={onVerTareasPorStatus}>
           Tareas por status
+        </button>
+        <button type="button" className="btn btn-tertiary" onClick={onVerTareasSemanales}>
+          Tareas semanales
         </button>
         <button type="button" className="btn btn-secondary" onClick={onNuevoProyecto}>
           + Crear proyecto
