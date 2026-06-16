@@ -18,11 +18,14 @@ import TareasPorStatus from './pages/TareasPorStatus'
 const getProjectId = (project) =>
   project?.id ?? project?._id ?? project?.projectId ?? project?.proyectId ?? project?.projectID
 
+// Aplica la misma estrategia de normalización para planes.
 const getPlanId = (plan) => plan?.id ?? plan?._id ?? plan?.planId
 
+// Aplica la misma estrategia de normalización para tareas.
 const getTaskId = (task) => task?.id ?? task?._id ?? task?.taskId
 
 function App() {
+  // "view" funciona como un router liviano basado en estado.
   // Controla la "vista" activa sin usar router (navegación interna simple).
   const [view, setView] = useState('home')
   // IDs/objetos seleccionados para prellenar formularios o editar registros.
@@ -41,6 +44,7 @@ function App() {
     setView('crearTareas')
   }
 
+  // Limpia selección previa para abrir el formulario en modo creación.
   const handleMostrarNuevoProyecto = () => {
     setSelectedProjectId('')
     setSelectedProject(null)
@@ -75,6 +79,7 @@ function App() {
     setTimeout(() => setFlashMessage(null), 3000)
   }
 
+  // Guarda el proyecto completo para editar y su id normalizado para usar como key.
   const handleMostrarEditarProyecto = (project) => {
     setSelectedProject(project)
     setSelectedProjectId(getProjectId(project))
@@ -93,6 +98,7 @@ function App() {
     setView('nuevoPlan')
   }
 
+  // Guarda el plan completo para editar y su id normalizado para usar como key.
   const handleMostrarEditarPlan = (plan) => {
     setSelectedPlan(plan)
     setSelectedPlanId(getPlanId(plan))
@@ -113,6 +119,7 @@ function App() {
     setTimeout(() => setFlashMessage(null), 3000)
   }
 
+  // Guarda la tarea completa para editar y su id normalizado para usar como key.
   const handleMostrarEditarTarea = (task) => {
     setSelectedTask(task)
     setSelectedTaskId(getTaskId(task))
@@ -128,6 +135,7 @@ function App() {
 
   return (
     <div className="app-shell">
+      {/* Header emite eventos de navegación y creación. */}
       <Header
         onVerProyectos={handleMostrarProyectos}
         onVerPlanes={handleMostrarPlanes}
@@ -156,6 +164,7 @@ function App() {
             <CrearProyecto onCreated={handleProjectCreated} />
           ) : view === 'editarProyecto' ? (
             <EditarProyecto
+              // Fuerza remonte al cambiar el elemento seleccionado para reiniciar estado interno.
               key={selectedProjectId}
               project={selectedProject}
               onUpdated={handleProjectUpdated}
@@ -165,6 +174,7 @@ function App() {
             <CrearPlan projectId={selectedProjectId} onCreated={handlePlanCreated} />
           ) : view === 'editarPlan' ? (
             <EditarPlan
+              // Fuerza remonte al cambiar el elemento seleccionado para reiniciar estado interno.
               key={selectedPlanId}
               plan={selectedPlan}
               onUpdated={handlePlanUpdated}
@@ -172,6 +182,7 @@ function App() {
             />
           ) : view === 'editarTarea' ? (
             <EditarTarea
+              // Fuerza remonte al cambiar el elemento seleccionado para reiniciar estado interno.
               key={selectedTaskId}
               task={selectedTask}
               onUpdated={handleTaskUpdated}

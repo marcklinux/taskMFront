@@ -72,6 +72,7 @@ const CrearTareas = ({ initialPlanId }) => {
     setMessage(null);
 
     try {
+      // Este es el objeto taskData que se envía al backend para crear la tarea.
       const taskData = {
         title,
         description,
