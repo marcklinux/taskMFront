@@ -365,6 +365,7 @@ const TareasSemanales = () => {
           notes: noteEditor.notes,
         });
 
+        // Actualiza el estado local reflejando la nota guardada en backend.
         setWorkLogsByKey((currentLogs) => ({
           ...currentLogs,
           [noteEditor.workDateKey]: {
@@ -373,24 +374,26 @@ const TareasSemanales = () => {
           },
         }));
 
+        // Elimina el override local porque ya esta persistido en backend.
         const nextOverrides = { ...notesOverrides };
         delete nextOverrides[noteEditor.workDateKey];
         setNotesOverrides(nextOverrides);
         persistNotesOverrides(nextOverrides);
-      } catch (err) {
-        setError(err.message || 'No se pudo guardar la nota.');
+        setNoteEditor(null);
         return;
+      } catch {
+        // El endpoint de PUT no esta disponible todavia; se guarda localmente.
       }
-    } else {
-      const nextOverrides = {
-        ...notesOverrides,
-        [noteEditor.workDateKey]: noteEditor.notes,
-      };
-
-      setNotesOverrides(nextOverrides);
-      persistNotesOverrides(nextOverrides);
     }
 
+    // Fallback: persistencia local si el backend no tiene PUT habilitado aun.
+    const nextOverrides = {
+      ...notesOverrides,
+      [noteEditor.workDateKey]: noteEditor.notes,
+    };
+
+    setNotesOverrides(nextOverrides);
+    persistNotesOverrides(nextOverrides);
     setNoteEditor(null);
   };
 
@@ -587,9 +590,8 @@ const TareasSemanales = () => {
               placeholder="Escribe la nota del dia"
             />
             <p className="weekly-note-hint">
-              {workLogsByKey[noteEditor.workDateKey]?.id
-                ? 'La nota se guardara directamente en el backend.'
-                : 'No se encontro el ID del registro; la nota se guardara localmente.'}
+              La nota se guarda localmente hasta que el endpoint PUT
+              {' /api/task-work-logs/{id} '}este activo en el backend.
             </p>
             <div className="form-actions">
               <button type="button" className="btn btn-tertiary" onClick={() => setNoteEditor(null)}>

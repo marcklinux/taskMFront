@@ -3,6 +3,7 @@ import CalendarField from '../components/CalendarField';
 import {
   exportWeeklyWorkLogReportCsv,
   exportWeeklyWorkLogReportPdf,
+  getTaskWorkLogsByDateRange,
   getWeeklyWorkLogReport,
 } from '../services/taskService.js';
 
@@ -136,7 +137,7 @@ const weekdayFromDate = (dateValue) => {
   return keys[weekdayIndex] === 'sunday' ? 'sunday' : keys[weekdayIndex];
 };
 
-const buildRowsFromReport = (entries, weekStart) => {
+const buildRowsFromReport = (entries, weekStart, notesByTaskId) => {
   return entries.map((entry, index) => {
     const taskId = String(getReportTaskId(entry) ?? `${getReportTaskTitle(entry)}-${index}`);
     const workDates = Array.isArray(entry?.fechasTrabajo)
@@ -156,12 +157,14 @@ const buildRowsFromReport = (entries, weekStart) => {
       }
     });
 
+    const notesForTask = notesByTaskId[taskId] ?? [];
+
     return {
       taskId,
       taskTitle: getReportTaskTitle(entry),
       totalLogs: entry?.totalRegistros ?? workDates.length,
       workDates,
-      notes: entry?.notes ? [entry.notes] : [],
+      notes: notesForTask,
       days,
       completedDays: WEEK_DAYS.filter((day) => days[day.key]).length,
       weekLabel: formatWeekRange(weekStart),
@@ -176,6 +179,7 @@ const ReporteSemanal = () => {
   const [fechaFin, setFechaFin] = useState(toApiDate(initialWeekEnd));
   const [weekStart, setWeekStart] = useState(initialWeekStart);
   const [rawEntries, setRawEntries] = useState([]);
+  const [notesByTaskId, setNotesByTaskId] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [exportingFormat, setExportingFormat] = useState(null);
@@ -188,8 +192,30 @@ const ReporteSemanal = () => {
       setError(null);
 
       try {
-        const data = await getWeeklyWorkLogReport(fechaInicio, fechaFin);
-        setRawEntries(normalizeReportEntries(data));
+        const [reportData, logsData] = await Promise.all([
+          getWeeklyWorkLogReport(fechaInicio, fechaFin),
+          getTaskWorkLogsByDateRange(fechaInicio, fechaFin),
+        ]);
+
+        setRawEntries(normalizeReportEntries(reportData));
+
+        const logs = Array.isArray(logsData) ? logsData : [];
+        const notesMap = logs.reduce((acc, log) => {
+          const taskId = String(log?.taskId ?? log?.task?.id ?? '');
+          const note = log?.notes ?? '';
+
+          if (taskId && note) {
+            if (!acc[taskId]) {
+              acc[taskId] = [];
+            }
+
+            acc[taskId].push(note);
+          }
+
+          return acc;
+        }, {});
+
+        setNotesByTaskId(notesMap);
       } catch (err) {
         setError(err.message || 'No se pudo cargar el reporte semanal.');
         setRawEntries([]);
@@ -222,7 +248,10 @@ const ReporteSemanal = () => {
     };
   }, [exportMessage]);
 
-  const reportRows = useMemo(() => buildRowsFromReport(rawEntries, weekStart), [rawEntries, weekStart]);
+  const reportRows = useMemo(
+    () => buildRowsFromReport(rawEntries, weekStart, notesByTaskId),
+    [rawEntries, weekStart, notesByTaskId],
+  );
   const currentWeekNumber = getWeekNumber(weekStart);
   const currentWeekDates = WEEK_DAYS.map((_, index) => getWeekDate(weekStart, index));
 
@@ -373,7 +402,13 @@ const ReporteSemanal = () => {
                     <td>
                       <div className="weekly-task-cell">
                         <strong>{row.taskTitle}</strong>
-                        <span>{row.notes.length > 0 ? row.notes[0] : 'Sin notas'}</span>
+                        {row.notes.length > 0
+                          ? row.notes.map((note, noteIndex) => (
+                              <span key={`${row.taskId}-note-${noteIndex}`} className="weekly-note-line">
+                                {note}
+                              </span>
+                            ))
+                          : <span className="weekly-note-line weekly-note-empty">Sin notas</span>}
                       </div>
                     </td>
                     {WEEK_DAYS.map((day) => (
