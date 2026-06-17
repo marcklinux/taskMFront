@@ -159,6 +159,31 @@ export const exportWeeklyWorkLogReportCsv = async (fechaInicio, fechaFin) =>
 export const exportWeeklyWorkLogReportPdf = async (fechaInicio, fechaFin) =>
   downloadWeeklyWorkLogReportFile(fechaInicio, fechaFin, 'pdf');
 
+// Actualiza el registro de trabajo de una tarea (notas y datos).
+export const updateTaskWorkLog = async (workLogId, { taskId, workDate, notes }) => {
+  const workLogsApiBaseUrl = 'http://localhost:8080/api/task-work-logs';
+  const response = await fetch(`${workLogsApiBaseUrl}/${workLogId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ taskId, workDate, notes }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response
+      .json()
+      .catch(async () => ({ message: await response.text().catch(() => '') }));
+    const backendMessage = errorBody?.message ?? errorBody?.error ?? response.statusText;
+
+    throw new Error(
+      `Error al actualizar el registro de trabajo en ${workLogsApiBaseUrl}/${workLogId}: ${backendMessage}`,
+    );
+  }
+
+  return response.json();
+};
+
 // Registra el trabajo realizado sobre una tarea en una fecha específica.
 export const createTaskWorkLog = async ({ taskId, workDate, notes }) => {
   const workLogsApiBaseUrl = 'http://localhost:8080/api/task-work-logs';

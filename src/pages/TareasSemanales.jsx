@@ -3,6 +3,7 @@ import {
   createTaskWorkLog,
   getTaskWorkLogsByDateRange,
   getTasksByDateRange,
+  updateTaskWorkLog,
 } from '../services/taskService.js';
 import CalendarField from '../components/CalendarField';
 
@@ -338,27 +339,58 @@ const TareasSemanales = () => {
   const getEffectiveNote = (workDateKey) =>
     notesOverrides[workDateKey] ?? workLogsByKey[workDateKey]?.notes ?? '';
 
-  const handleOpenNoteEditor = (task, dayLabel, workDateKey) => {
+  const handleOpenNoteEditor = (task, dayLabel, workDateKey, workDate) => {
     setNoteEditor({
       taskTitle: getTaskTitle(task),
+      taskId: Number(getTaskId(task)),
       dayLabel,
       workDateKey,
+      workDate,
       notes: getEffectiveNote(workDateKey),
     });
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!noteEditor) {
       return;
     }
 
-    const nextOverrides = {
-      ...notesOverrides,
-      [noteEditor.workDateKey]: noteEditor.notes,
-    };
+    const logEntry = workLogsByKey[noteEditor.workDateKey];
 
-    setNotesOverrides(nextOverrides);
-    persistNotesOverrides(nextOverrides);
+    if (logEntry?.id) {
+      try {
+        await updateTaskWorkLog(logEntry.id, {
+          taskId: noteEditor.taskId,
+          workDate: noteEditor.workDate,
+          notes: noteEditor.notes,
+        });
+
+        setWorkLogsByKey((currentLogs) => ({
+          ...currentLogs,
+          [noteEditor.workDateKey]: {
+            ...currentLogs[noteEditor.workDateKey],
+            notes: noteEditor.notes,
+          },
+        }));
+
+        const nextOverrides = { ...notesOverrides };
+        delete nextOverrides[noteEditor.workDateKey];
+        setNotesOverrides(nextOverrides);
+        persistNotesOverrides(nextOverrides);
+      } catch (err) {
+        setError(err.message || 'No se pudo guardar la nota.');
+        return;
+      }
+    } else {
+      const nextOverrides = {
+        ...notesOverrides,
+        [noteEditor.workDateKey]: noteEditor.notes,
+      };
+
+      setNotesOverrides(nextOverrides);
+      persistNotesOverrides(nextOverrides);
+    }
+
     setNoteEditor(null);
   };
 
@@ -520,7 +552,7 @@ const TareasSemanales = () => {
                               <button
                                 type="button"
                                 className="weekly-note-btn"
-                                onClick={() => handleOpenNoteEditor(task, day.label, workDateKey)}
+                                onClick={() => handleOpenNoteEditor(task, day.label, workDateKey, toApiDate(workDate))}
                               >
                                 Nota
                               </button>
@@ -555,8 +587,9 @@ const TareasSemanales = () => {
               placeholder="Escribe la nota del dia"
             />
             <p className="weekly-note-hint">
-              Esta edicion se guarda en la app local porque tu backend actual no soporta actualizar
-              notas por registro.
+              {workLogsByKey[noteEditor.workDateKey]?.id
+                ? 'La nota se guardara directamente en el backend.'
+                : 'No se encontro el ID del registro; la nota se guardara localmente.'}
             </p>
             <div className="form-actions">
               <button type="button" className="btn btn-tertiary" onClick={() => setNoteEditor(null)}>
