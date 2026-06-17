@@ -46,6 +46,21 @@ const toApiDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+const parseApiDate = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const normalizedValue = String(value).slice(0, 10);
+  const [year, month, day] = normalizedValue.split('-').map(Number);
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+};
+
 const formatWeekRange = (weekStart) => {
   const weekEnd = getEndOfWeek(weekStart);
   const formatter = new Intl.DateTimeFormat('es-MX', {
@@ -109,7 +124,12 @@ const weekdayFromDate = (dateValue) => {
     return null;
   }
 
-  const date = new Date(dateValue);
+  const date = parseApiDate(dateValue);
+
+  if (!date) {
+    return null;
+  }
+
   const weekdayIndex = date.getDay();
   const keys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -140,6 +160,7 @@ const buildRowsFromReport = (entries, weekStart) => {
       taskId,
       taskTitle: getReportTaskTitle(entry),
       totalLogs: entry?.totalRegistros ?? workDates.length,
+      workDates,
       notes: entry?.notes ? [entry.notes] : [],
       days,
       completedDays: WEEK_DAYS.filter((day) => days[day.key]).length,
@@ -342,6 +363,7 @@ const ReporteSemanal = () => {
                       <div className="weekly-day-date">{currentWeekDates[index].toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</div>
                     </th>
                   ))}
+                  <th>Fechas registradas</th>
                   <th>Totales</th>
                 </tr>
               </thead>
@@ -361,6 +383,17 @@ const ReporteSemanal = () => {
                         </span>
                       </td>
                     ))}
+                    <td>
+                      <div className="weekly-registered-dates">
+                        {row.workDates.length > 0
+                          ? row.workDates.map((workDate, index) => (
+                              <span key={`${row.taskId}-date-${index}`} className="weekly-date-chip">
+                                {String(workDate).slice(0, 10)}
+                              </span>
+                            ))
+                          : <span className="weekly-date-chip">Sin fechas</span>}
+                      </div>
+                    </td>
                     <td>
                       <span className="weekly-frequency-badge">{`${row.completedDays}/7 dias`}</span>
                     </td>

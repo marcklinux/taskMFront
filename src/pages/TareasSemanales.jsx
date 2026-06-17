@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
   createTaskWorkLog,
+  getTaskWorkLogsByDateRange,
   getTasksByDateRange,
-  getWeeklyWorkLogReport,
 } from '../services/taskService.js';
 import CalendarField from '../components/CalendarField';
 
@@ -66,6 +66,21 @@ const toApiDate = (date) => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+const parseApiDate = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const normalizedValue = String(value).slice(0, 10);
+  const [year, month, day] = normalizedValue.split('-').map(Number);
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
 };
 
 const getWeekNumber = (date) => {
@@ -137,45 +152,66 @@ const normalizeReportEntries = (data) => {
   return [];
 };
 
-const getReportTaskId = (entry) =>
-  entry?.taskId ?? entry?.task?.id ?? entry?.task?._id ?? entry?.task?.taskId ?? entry?.id;
+const getWorkLogTaskId = (log) => log?.taskId ?? log?.task?.id ?? log?.task?._id;
 
-const buildWeeklyChecksFromReport = (reportEntries, weekStart) => {
-  return reportEntries.reduce((checksMap, entry) => {
-    const taskId = String(getReportTaskId(entry) ?? '');
-    const workDates = Array.isArray(entry?.fechasTrabajo)
-      ? entry.fechasTrabajo
-      : [entry?.workDate ?? entry?.fechaTrabajo ?? entry?.date ?? entry?.fecha].filter(Boolean);
+const getWorkLogDate = (log) => log?.workDate ?? log?.fechaTrabajo ?? log?.date ?? log?.fecha;
 
-    if (!taskId || workDates.length === 0) {
-      return checksMap;
-    }
+const readNotesOverrides = () => {
+  try {
+    return JSON.parse(window.localStorage.getItem('task-work-notes-overrides') ?? '{}');
+  } catch {
+    return {};
+  }
+};
 
-    workDates.forEach((workDate) => {
-      const taskDate = new Date(workDate);
+const persistNotesOverrides = (nextOverrides) => {
+  window.localStorage.setItem('task-work-notes-overrides', JSON.stringify(nextOverrides));
+};
+
+const buildWeeklyStateFromWorkLogs = (workLogs, weekStart) => {
+  return workLogs.reduce(
+    (acc, workLog) => {
+      const taskId = String(getWorkLogTaskId(workLog) ?? '');
+      const workDate = getWorkLogDate(workLog);
+      const taskDate = parseApiDate(workDate);
+
+      if (!taskId || !taskDate) {
+        return acc;
+      }
+
       taskDate.setHours(0, 0, 0, 0);
       const dayIndex = Math.floor((taskDate.getTime() - weekStart.getTime()) / 86400000);
 
       if (dayIndex < 0 || dayIndex > 6) {
-        return;
+        return acc;
       }
 
       const dayKey = WEEK_DAYS[dayIndex]?.key;
 
       if (!dayKey) {
-        return;
+        return acc;
       }
 
-      if (!checksMap[taskId]) {
-        checksMap[taskId] = {};
+      const checkKey = getCheckKey(taskId, taskDate);
+
+      if (!acc.weeklyChecks[taskId]) {
+        acc.weeklyChecks[taskId] = {};
       }
 
-      checksMap[taskId][dayKey] = true;
-      checksMap[getCheckKey(taskId, taskDate)] = true;
-    });
+      acc.weeklyChecks[taskId][dayKey] = true;
+      acc.weeklyChecks[checkKey] = true;
+      acc.workLogsByKey[checkKey] = {
+        id: workLog?.id,
+        notes: workLog?.notes ?? '',
+      };
 
-    return checksMap;
-  }, {});
+      return acc;
+    },
+    {
+      weeklyChecks: {},
+      workLogsByKey: {},
+    },
+  );
 };
 
 const TareasSemanales = () => {
@@ -192,6 +228,9 @@ const TareasSemanales = () => {
   const [fechaFin, setFechaFin] = useState(initialFechaFin);
   const [weeklyChecks, setWeeklyChecks] = useState(() => readWeeklyChecks(initialFechaInicio, initialFechaFin));
   const [savingCellKey, setSavingCellKey] = useState(null);
+  const [workLogsByKey, setWorkLogsByKey] = useState({});
+  const [notesOverrides, setNotesOverrides] = useState(() => readNotesOverrides());
+  const [noteEditor, setNoteEditor] = useState(null);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -215,15 +254,17 @@ const TareasSemanales = () => {
   useEffect(() => {
     const syncExistingWorkLogs = async () => {
       try {
-        const reportData = await getWeeklyWorkLogReport(fechaInicio, fechaFin);
-        const reportEntries = normalizeReportEntries(reportData);
-        const reportChecks = buildWeeklyChecksFromReport(reportEntries, getStartOfWeek(new Date(`${fechaInicio}T00:00:00`)));
+        const weekStart = getStartOfWeek(new Date(`${fechaInicio}T00:00:00`));
+        const workLogsData = await getTaskWorkLogsByDateRange(fechaInicio, fechaFin);
+        const workLogs = normalizeReportEntries(workLogsData);
+        const weeklyState = buildWeeklyStateFromWorkLogs(workLogs, weekStart);
         const savedChecks = readWeeklyChecks(fechaInicio, fechaFin);
 
         setWeeklyChecks({
           ...savedChecks,
-          ...reportChecks,
+          ...weeklyState.weeklyChecks,
         });
+        setWorkLogsByKey(weeklyState.workLogsByKey);
       } catch {
         // Si el reporte falla, se mantiene el estado local para no bloquear la pantalla.
       }
@@ -279,11 +320,46 @@ const TareasSemanales = () => {
         },
         [workDateKey]: true,
       });
+
+      setWorkLogsByKey((currentLogs) => ({
+        ...currentLogs,
+        [workDateKey]: {
+          ...(currentLogs[workDateKey] ?? {}),
+          notes: `${getTaskTitle(task)} registrada en ${dayLabel}`,
+        },
+      }));
     } catch (err) {
       setError(err.message || 'No se pudo registrar el trabajo de la tarea.');
     } finally {
       setSavingCellKey(null);
     }
+  };
+
+  const getEffectiveNote = (workDateKey) =>
+    notesOverrides[workDateKey] ?? workLogsByKey[workDateKey]?.notes ?? '';
+
+  const handleOpenNoteEditor = (task, dayLabel, workDateKey) => {
+    setNoteEditor({
+      taskTitle: getTaskTitle(task),
+      dayLabel,
+      workDateKey,
+      notes: getEffectiveNote(workDateKey),
+    });
+  };
+
+  const handleSaveNote = () => {
+    if (!noteEditor) {
+      return;
+    }
+
+    const nextOverrides = {
+      ...notesOverrides,
+      [noteEditor.workDateKey]: noteEditor.notes,
+    };
+
+    setNotesOverrides(nextOverrides);
+    persistNotesOverrides(nextOverrides);
+    setNoteEditor(null);
   };
 
   const changeWeek = (nextWeekDate) => {
@@ -408,7 +484,9 @@ const TareasSemanales = () => {
               <tbody>
                 {tasks.map((task, index) => {
                   const taskKey = buildTaskKey(task, index);
-                  const completedDays = WEEK_DAYS.filter((day) => weeklyChecks[taskKey]?.[day.key]).length;
+                  const taskIdKey = String(getTaskId(task) ?? taskKey);
+                  const taskChecks = weeklyChecks[taskKey] ?? weeklyChecks[taskIdKey] ?? {};
+                  const completedDays = WEEK_DAYS.filter((day) => taskChecks?.[day.key]).length;
 
                   return (
                     <tr key={taskKey}>
@@ -419,10 +497,11 @@ const TareasSemanales = () => {
                         </div>
                       </td>
                       {WEEK_DAYS.map((day, dayIndex) => {
-                        const isChecked = Boolean(weeklyChecks[taskKey]?.[day.key]);
+                        const isChecked = Boolean(taskChecks?.[day.key]);
                         const cellKey = `${taskKey}-${day.key}`;
                         const isSaving = savingCellKey === cellKey;
                         const workDate = currentWeekDates[dayIndex];
+                        const workDateKey = getCheckKey(getTaskId(task), workDate);
 
                         return (
                           <td key={cellKey}>
@@ -437,6 +516,15 @@ const TareasSemanales = () => {
                               />
                               <span>{`Marcar ${getTaskTitle(task)} en ${day.label}`}</span>
                             </label>
+                            {isChecked && (
+                              <button
+                                type="button"
+                                className="weekly-note-btn"
+                                onClick={() => handleOpenNoteEditor(task, day.label, workDateKey)}
+                              >
+                                Nota
+                              </button>
+                            )}
                           </td>
                         );
                       })}
@@ -448,6 +536,36 @@ const TareasSemanales = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {noteEditor && (
+          <div className="weekly-note-editor">
+            <h3>Editar nota del registro diario</h3>
+            <p>{`${noteEditor.taskTitle} - ${noteEditor.dayLabel}`}</p>
+            <textarea
+              value={noteEditor.notes}
+              onChange={(event) =>
+                setNoteEditor((currentEditor) =>
+                  currentEditor
+                    ? { ...currentEditor, notes: event.target.value }
+                    : currentEditor,
+                )
+              }
+              placeholder="Escribe la nota del dia"
+            />
+            <p className="weekly-note-hint">
+              Esta edicion se guarda en la app local porque tu backend actual no soporta actualizar
+              notas por registro.
+            </p>
+            <div className="form-actions">
+              <button type="button" className="btn btn-tertiary" onClick={() => setNoteEditor(null)}>
+                Cancelar
+              </button>
+              <button type="button" className="btn btn-primary" onClick={handleSaveNote}>
+                Guardar nota
+              </button>
+            </div>
           </div>
         )}
       </section>

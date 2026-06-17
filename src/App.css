@@ -546,6 +546,67 @@ button {
   color: #0f172a;
 }
 
+.weekly-registered-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.weekly-date-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #1e3a8a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.weekly-note-btn {
+  margin-top: 8px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(30, 64, 175, 0.12);
+  color: #1e3a8a;
+  border: 1px solid rgba(37, 99, 235, 0.22);
+}
+
+.weekly-note-editor {
+  margin-top: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(219, 234, 254, 0.52) 0%, rgba(220, 252, 231, 0.52) 100%);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  display: grid;
+  gap: 10px;
+}
+
+.weekly-note-editor h3 {
+  margin: 0;
+  color: #1e3a8a;
+  font-size: 18px;
+}
+
+.weekly-note-editor p {
+  margin: 0;
+  color: #334155;
+}
+
+.weekly-note-editor textarea {
+  min-height: 90px;
+}
+
+.weekly-note-hint {
+  font-size: 12px;
+  color: #475569;
+}
+
 .weekly-range-controls .weekly-export-btn {
   background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
   color: #1e3a8a;

@@ -101,6 +101,25 @@ export const getWeeklyWorkLogReport = async (fechaInicio, fechaFin) => {
   return response.json();
 };
 
+// Obtiene el detalle de work logs por rango de fechas.
+export const getTaskWorkLogsByDateRange = async (fechaInicio, fechaFin) => {
+  const params = new URLSearchParams({
+    fechaInicio,
+    fechaFin,
+  });
+
+  const logsBaseUrl = API_BASE_URL.replace('/api/tasks', '/api/task-work-logs');
+  const response = await fetch(`${logsBaseUrl}?${params.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(
+      `Error al obtener work logs del rango ${fechaInicio} al ${fechaFin}: ${response.statusText}`,
+    );
+  }
+
+  return response.json();
+};
+
 const downloadWeeklyWorkLogReportFile = async (fechaInicio, fechaFin, format) => {
   const params = new URLSearchParams({
     fechaInicio,
