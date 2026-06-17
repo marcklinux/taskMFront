@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { updateProject } from '../services/projectService.js';
 import { getStatuses } from '../services/statusService.js';
 import { getPeriodos } from '../services/periodoService.js';
+import CalendarField from '../components/CalendarField';
 
 // Permite obtener el id aunque cambie el nombre de la propiedad.
 const getProjectId = (project) => project?.id ?? project?._id ?? project?.projectId;
@@ -187,25 +188,21 @@ const EditarProyecto = ({ project, onUpdated, onCancel }) => {
           )}
         </div>
 
-        <div>
-          <label htmlFor="startDate">Fecha de inicio</label>
-          <input
-            id="startDate"
-            type="date"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-          />
-        </div>
+        <CalendarField
+          id="startDate"
+          label="Fecha de inicio"
+          value={startDate}
+          max={endDate}
+          onChange={setStartDate}
+        />
 
-        <div>
-          <label htmlFor="endDate">Fecha de fin</label>
-          <input
-            id="endDate"
-            type="date"
-            value={endDate}
-            onChange={(event) => setEndDate(event.target.value)}
-          />
-        </div>
+        <CalendarField
+          id="endDate"
+          label="Fecha de fin"
+          value={endDate}
+          min={startDate}
+          onChange={setEndDate}
+        />
 
         <div className="form-actions">
           {onCancel && (

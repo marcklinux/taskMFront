@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getPlans } from '../services/planService.js';
 import { getStatuses } from '../services/statusService.js';
 import { updateTask } from '../services/taskService.js';
+import CalendarField from '../components/CalendarField';
 
 const getTaskId = (task) => task?.id ?? task?._id ?? task?.taskId;
 
@@ -194,15 +195,12 @@ const EditarTarea = ({ task, onUpdated, onCancel }) => {
           )}
         </div>
 
-        <div>
-          <label htmlFor="taskDate">Fecha de tarea</label>
-          <input
-            id="taskDate"
-            type="date"
-            value={taskDate}
-            onChange={(event) => setTaskDate(event.target.value)}
-          />
-        </div>
+        <CalendarField
+          id="taskDate"
+          label="Fecha de tarea"
+          value={taskDate}
+          onChange={setTaskDate}
+        />
 
         <div className="form-actions">
           {onCancel && (

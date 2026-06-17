@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getPlans } from '../services/planService.js';
 import { createTask } from '../services/taskService.js';
 import { getStatuses } from '../services/statusService.js';
+import CalendarField from '../components/CalendarField';
 
 // Normaliza respuesta de planes desde distintos formatos de backend.
 const normalizePlans = (data) => {
@@ -169,15 +170,12 @@ const CrearTareas = ({ initialPlanId }) => {
           )}
         </div>
 
-        <div>
-          <label htmlFor="taskDate">Fecha de tarea</label>
-          <input
-            id="taskDate"
-            type="date"
-            value={taskDate}
-            onChange={(event) => setTaskDate(event.target.value)}
-          />
-        </div>
+        <CalendarField
+          id="taskDate"
+          label="Fecha de tarea"
+          value={taskDate}
+          onChange={setTaskDate}
+        />
 
         <button type="submit" className="btn btn-primary" disabled={loading}>
           {loading ? 'Guardando...' : 'Guardar tarea'}

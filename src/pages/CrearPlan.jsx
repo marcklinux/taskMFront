@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPlan } from '../services/planService.js';
 import { getStatuses } from '../services/statusService.js';
 import { getProjects, updateProject } from '../services/projectService.js';
+import CalendarField from '../components/CalendarField';
 
 // Si llega como string numérico, lo convierte a número.
 // Si no, mantiene el valor original para no perder compatibilidad.
@@ -267,25 +268,21 @@ const CrearPlan = ({ projectId, onCreated }) => {
           )}
         </div>
 
-        <div>
-          <label htmlFor="startDate">Fecha de inicio</label>
-          <input
-            id="startDate"
-            type="date"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-          />
-        </div>
+        <CalendarField
+          id="startDate"
+          label="Fecha de inicio"
+          value={startDate}
+          max={endDate}
+          onChange={setStartDate}
+        />
 
-        <div>
-          <label htmlFor="endDate">Fecha de fin</label>
-          <input
-            id="endDate"
-            type="date"
-            value={endDate}
-            onChange={(event) => setEndDate(event.target.value)}
-          />
-        </div>
+        <CalendarField
+          id="endDate"
+          label="Fecha de fin"
+          value={endDate}
+          min={startDate}
+          onChange={setEndDate}
+        />
 
         <button type="submit" className="btn btn-primary" disabled={loading || !selectedProjectId}>
           {loading ? 'Guardando...' : 'Guardar plan'}

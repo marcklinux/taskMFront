@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { updatePlan } from '../services/planService.js';
 import { getStatuses } from '../services/statusService.js';
+import CalendarField from '../components/CalendarField';
 
 const getPlanId = (plan) => plan?.id ?? plan?._id ?? plan?.planId;
 
@@ -151,25 +152,21 @@ const EditarPlan = ({ plan, onUpdated, onCancel }) => {
           )}
         </div>
 
-        <div>
-          <label htmlFor="startDate">Fecha de inicio</label>
-          <input
-            id="startDate"
-            type="date"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-          />
-        </div>
+        <CalendarField
+          id="startDate"
+          label="Fecha de inicio"
+          value={startDate}
+          max={endDate}
+          onChange={setStartDate}
+        />
 
-        <div>
-          <label htmlFor="endDate">Fecha de fin</label>
-          <input
-            id="endDate"
-            type="date"
-            value={endDate}
-            onChange={(event) => setEndDate(event.target.value)}
-          />
-        </div>
+        <CalendarField
+          id="endDate"
+          label="Fecha de fin"
+          value={endDate}
+          min={startDate}
+          onChange={setEndDate}
+        />
 
         <div className="form-actions">
           {onCancel && (
