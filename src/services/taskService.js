@@ -83,6 +83,92 @@ export const getTasksByDateRange = async (fechaInicio, fechaFin) => {
   return response.json();
 };
 
+// Obtiene el reporte semanal de work logs dentro de un rango de fechas.
+export const getWeeklyWorkLogReport = async (fechaInicio, fechaFin) => {
+  const params = new URLSearchParams({
+    fechaInicio,
+    fechaFin,
+  });
+
+  const response = await fetch(`${API_BASE_URL.replace('/api/tasks', '/api/task-work-logs')}/reporte-semanal?${params.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(
+      `Error al obtener el reporte semanal ${fechaInicio} al ${fechaFin}: ${response.statusText}`,
+    );
+  }
+
+  return response.json();
+};
+
+const downloadWeeklyWorkLogReportFile = async (fechaInicio, fechaFin, format) => {
+  const params = new URLSearchParams({
+    fechaInicio,
+    fechaFin,
+  });
+
+  const baseUrl = API_BASE_URL.replace('/api/tasks', '/api/task-work-logs');
+  const exportUrl = `${baseUrl}/reporte-semanal/${format}?${params.toString()}`;
+  const response = await fetch(exportUrl);
+
+  if (!response.ok) {
+    const errorBody = await response
+      .json()
+      .catch(async () => ({ message: await response.text().catch(() => '') }));
+    const backendMessage = errorBody?.message ?? errorBody?.error ?? response.statusText;
+
+    throw new Error(
+      `Error al exportar reporte semanal en ${format.toUpperCase()} desde ${exportUrl}: ${backendMessage}`,
+    );
+  }
+
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get('content-disposition') ?? '';
+  const fileNameMatch = contentDisposition.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
+  const defaultFileName = `reporte-semanal-${fechaInicio}-${fechaFin}.${format}`;
+  const fileName = fileNameMatch?.[1] ? decodeURIComponent(fileNameMatch[1].replace(/"/g, '')) : defaultFileName;
+
+  return {
+    blob,
+    fileName,
+  };
+};
+
+export const exportWeeklyWorkLogReportCsv = async (fechaInicio, fechaFin) =>
+  downloadWeeklyWorkLogReportFile(fechaInicio, fechaFin, 'csv');
+
+export const exportWeeklyWorkLogReportPdf = async (fechaInicio, fechaFin) =>
+  downloadWeeklyWorkLogReportFile(fechaInicio, fechaFin, 'pdf');
+
+// Registra el trabajo realizado sobre una tarea en una fecha específica.
+export const createTaskWorkLog = async ({ taskId, workDate, notes }) => {
+  const workLogsApiBaseUrl = 'http://localhost:8080/api/task-work-logs';
+  const response = await fetch('http://localhost:8080/api/task-work-logs', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      taskId,
+      workDate,
+      notes,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response
+      .json()
+      .catch(async () => ({ message: await response.text().catch(() => '') }));
+    const backendMessage = errorBody?.message ?? errorBody?.error ?? response.statusText;
+
+    throw new Error(
+      `Error al registrar el trabajo de la tarea en ${workLogsApiBaseUrl}: ${backendMessage}`,
+    );
+  }
+
+  return response.json();
+};
+
 // Crea una nueva tarea en el backend.
 export const createTask = async (taskData) => {
   const response = await fetch(API_BASE_URL, {

@@ -353,6 +353,51 @@ button {
   border-radius: 12px;
 }
 
+.weekly-export-group {
+  display: grid;
+  gap: 8px;
+  margin-left: auto;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(37, 99, 235, 0.12);
+}
+
+.weekly-export-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1e3a8a;
+}
+
+.weekly-export-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.calendar-picker-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-picker-control input {
+  flex: 1;
+}
+
+.calendar-picker-button {
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e3a8a;
+  font-weight: 700;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.calendar-picker-button:hover {
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+}
+
 .weekly-table-shell {
   overflow-x: auto;
   border-radius: 28px;
@@ -466,6 +511,46 @@ button {
   display: none;
 }
 
+.weekly-day-date {
+  margin-top: 4px;
+  color: rgba(30, 58, 138, 0.7);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.weekly-report-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  color: #334155;
+  font-weight: 700;
+}
+
+.weekly-report-pill-active {
+  background: linear-gradient(135deg, #dbeafe 0%, #bbf7d0 100%);
+  color: #0f172a;
+}
+
+.weekly-range-controls .weekly-export-btn {
+  background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+  color: #1e3a8a;
+  border: 1px solid rgba(37, 99, 235, 0.24);
+  font-weight: 700;
+}
+
+.weekly-range-controls .weekly-export-btn:hover {
+  background: linear-gradient(135deg, #bfdbfe 0%, #c7d2fe 100%);
+}
+
+.weekly-range-controls .weekly-export-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 @media (max-width: 900px) {
   .app-content {
     display: flex;
@@ -524,6 +609,15 @@ button {
     width: auto;
   }
 
+  .weekly-export-group {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .calendar-picker-control {
+    flex-wrap: wrap;
+  }
+
   .task-card h3 {
     font-size: 18px;
   }
@@ -551,6 +645,14 @@ button {
   }
 
   .weekly-range-controls .btn {
+    width: 100%;
+  }
+
+  .weekly-export-actions {
+    width: 100%;
+  }
+
+  .calendar-picker-button {
     width: 100%;
   }
 }

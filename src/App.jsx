@@ -13,6 +13,7 @@ import ListaDeTareas from './pages/ListaDeTareas'
 import EditarTarea from './pages/EditarTarea'
 import TareasPorStatus from './pages/TareasPorStatus'
 import TareasSemanales from './pages/TareasSemanales'
+import ReporteSemanal from './pages/ReporteSemanal'
 
 // Normaliza el identificador del proyecto porque el backend puede devolver
 // distintos nombres de propiedad según el endpoint.
@@ -73,6 +74,10 @@ function App() {
 
   const handleMostrarTareasSemanales = () => {
     setView('tareasSemanales')
+  }
+
+  const handleMostrarReporteSemanal = () => {
+    setView('reporteSemanal')
   }
 
   const handleProjectCreated = (projectId) => {
@@ -147,6 +152,7 @@ function App() {
         onVerTareas={handleMostrarListaTareas}
         onVerTareasPorStatus={handleMostrarTareasPorStatus}
         onVerTareasSemanales={handleMostrarTareasSemanales}
+        onVerReporteSemanal={handleMostrarReporteSemanal}
         onNuevoProyecto={handleMostrarNuevoProyecto}
         onNuevoPlan={() => handleMostrarNuevoPlan()}
         onNuevaTarea={() => handleMostrarCrearTareas()}
@@ -164,6 +170,8 @@ function App() {
             <TareasPorStatus />
           ) : view === 'tareasSemanales' ? (
             <TareasSemanales />
+          ) : view === 'reporteSemanal' ? (
+            <ReporteSemanal />
           ) : view === 'listaTareas' ? (
             <ListaDeTareas onEditarTarea={handleMostrarEditarTarea} />
           ) : view === 'crearTareas' ? (

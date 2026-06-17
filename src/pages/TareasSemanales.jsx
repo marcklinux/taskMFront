@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { getTasksByDateRange } from '../services/taskService.js';
+import {
+  createTaskWorkLog,
+  getTasksByDateRange,
+  getWeeklyWorkLogReport,
+} from '../services/taskService.js';
+import CalendarField from '../components/CalendarField';
 
 const WEEK_DAYS = [
   { key: 'monday', label: 'Lunes', shortLabel: 'Lun' },
@@ -50,6 +55,12 @@ const getEndOfWeek = (weekStart) => {
   return result;
 };
 
+const getWeekDate = (weekStart, dayIndex) => {
+  const result = new Date(weekStart);
+  result.setDate(result.getDate() + dayIndex);
+  return result;
+};
+
 const toApiDate = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -96,6 +107,77 @@ const readWeeklyChecks = (fechaInicio, fechaFin) => {
 
 const buildTaskKey = (task, index) => String(getTaskId(task) ?? `${getTaskTitle(task)}-${index}`);
 
+const getCheckKey = (taskId, workDate) => `${taskId}-${toApiDate(workDate)}`;
+
+const normalizeReportEntries = (data) => {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.tareas)) {
+    return data.tareas;
+  }
+
+  if (Array.isArray(data?.content)) {
+    return data.content;
+  }
+
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+
+  if (Array.isArray(data?.items)) {
+    return data.items;
+  }
+
+  if (Array.isArray(data?.results)) {
+    return data.results;
+  }
+
+  return [];
+};
+
+const getReportTaskId = (entry) =>
+  entry?.taskId ?? entry?.task?.id ?? entry?.task?._id ?? entry?.task?.taskId ?? entry?.id;
+
+const buildWeeklyChecksFromReport = (reportEntries, weekStart) => {
+  return reportEntries.reduce((checksMap, entry) => {
+    const taskId = String(getReportTaskId(entry) ?? '');
+    const workDates = Array.isArray(entry?.fechasTrabajo)
+      ? entry.fechasTrabajo
+      : [entry?.workDate ?? entry?.fechaTrabajo ?? entry?.date ?? entry?.fecha].filter(Boolean);
+
+    if (!taskId || workDates.length === 0) {
+      return checksMap;
+    }
+
+    workDates.forEach((workDate) => {
+      const taskDate = new Date(workDate);
+      taskDate.setHours(0, 0, 0, 0);
+      const dayIndex = Math.floor((taskDate.getTime() - weekStart.getTime()) / 86400000);
+
+      if (dayIndex < 0 || dayIndex > 6) {
+        return;
+      }
+
+      const dayKey = WEEK_DAYS[dayIndex]?.key;
+
+      if (!dayKey) {
+        return;
+      }
+
+      if (!checksMap[taskId]) {
+        checksMap[taskId] = {};
+      }
+
+      checksMap[taskId][dayKey] = true;
+      checksMap[getCheckKey(taskId, taskDate)] = true;
+    });
+
+    return checksMap;
+  }, {});
+};
+
 const TareasSemanales = () => {
   const initialWeekStart = getStartOfWeek(new Date());
   const initialWeekEnd = getEndOfWeek(initialWeekStart);
@@ -109,6 +191,7 @@ const TareasSemanales = () => {
   const [fechaInicio, setFechaInicio] = useState(initialFechaInicio);
   const [fechaFin, setFechaFin] = useState(initialFechaFin);
   const [weeklyChecks, setWeeklyChecks] = useState(() => readWeeklyChecks(initialFechaInicio, initialFechaFin));
+  const [savingCellKey, setSavingCellKey] = useState(null);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -129,10 +212,78 @@ const TareasSemanales = () => {
     fetchTasks();
   }, [fechaInicio, fechaFin]);
 
+  useEffect(() => {
+    const syncExistingWorkLogs = async () => {
+      try {
+        const reportData = await getWeeklyWorkLogReport(fechaInicio, fechaFin);
+        const reportEntries = normalizeReportEntries(reportData);
+        const reportChecks = buildWeeklyChecksFromReport(reportEntries, getStartOfWeek(new Date(`${fechaInicio}T00:00:00`)));
+        const savedChecks = readWeeklyChecks(fechaInicio, fechaFin);
+
+        setWeeklyChecks({
+          ...savedChecks,
+          ...reportChecks,
+        });
+      } catch {
+        // Si el reporte falla, se mantiene el estado local para no bloquear la pantalla.
+      }
+    };
+
+    syncExistingWorkLogs();
+  }, [fechaInicio, fechaFin]);
+
   const persistChecks = (nextChecks) => {
     const storageKey = getRangeStorageKey(fechaInicio, fechaFin);
     setWeeklyChecks(nextChecks);
     window.localStorage.setItem(storageKey, JSON.stringify(nextChecks));
+  };
+
+  const registerWorkLog = async (task, taskKey, dayKey, dayLabel, workDate) => {
+    const cellKey = `${taskKey}-${dayKey}`;
+    const taskId = getTaskId(task);
+    const workDateKey = getCheckKey(taskId, workDate);
+
+    if (weeklyChecks[taskKey]?.[dayKey] || savingCellKey === cellKey) {
+      return;
+    }
+
+    if (!taskId) {
+      setError('No se pudo identificar la tarea para registrar el trabajo.');
+      return;
+    }
+
+    if (weeklyChecks[workDateKey]) {
+      return;
+    }
+
+    setSavingCellKey(cellKey);
+    setError(null);
+
+    try {
+      if (weeklyChecks[String(taskId)]?.[dayKey] || weeklyChecks[taskKey]?.[dayKey]) {
+        return;
+      }
+
+      await createTaskWorkLog({
+        taskId: Number(taskId),
+        workDate: toApiDate(workDate),
+        notes: `${getTaskTitle(task)} registrada en ${dayLabel}`,
+      });
+
+      const currentTaskChecks = weeklyChecks[taskKey] ?? {};
+      persistChecks({
+        ...weeklyChecks,
+        [taskKey]: {
+          ...currentTaskChecks,
+          [dayKey]: true,
+        },
+        [workDateKey]: true,
+      });
+    } catch (err) {
+      setError(err.message || 'No se pudo registrar el trabajo de la tarea.');
+    } finally {
+      setSavingCellKey(null);
+    }
   };
 
   const changeWeek = (nextWeekDate) => {
@@ -164,19 +315,6 @@ const TareasSemanales = () => {
     setWeeklyChecks(readWeeklyChecks(fechaInicio, fechaFin));
   };
 
-  const handleToggleDay = (taskKey, dayKey) => {
-    const currentTaskChecks = weeklyChecks[taskKey] ?? {};
-    const nextChecks = {
-      ...weeklyChecks,
-      [taskKey]: {
-        ...currentTaskChecks,
-        [dayKey]: !currentTaskChecks[dayKey],
-      },
-    };
-
-    persistChecks(nextChecks);
-  };
-
   const handlePreviousWeek = () => {
     const nextWeek = new Date(currentWeekStart);
     nextWeek.setDate(nextWeek.getDate() - 7);
@@ -194,6 +332,7 @@ const TareasSemanales = () => {
   };
 
   const currentWeekNumber = getWeekNumber(currentWeekStart);
+  const currentWeekDates = WEEK_DAYS.map((_, dayIndex) => getWeekDate(currentWeekStart, dayIndex));
 
   return (
     <main>
@@ -220,24 +359,20 @@ const TareasSemanales = () => {
         </div>
 
         <div className="weekly-range-controls">
-          <div className="weekly-range-field">
-            <label htmlFor="fechaInicio">Fecha inicio</label>
-            <input
-              id="fechaInicio"
-              type="date"
-              value={fechaInicio}
-              onChange={(event) => setFechaInicio(event.target.value)}
-            />
-          </div>
-          <div className="weekly-range-field">
-            <label htmlFor="fechaFin">Fecha fin</label>
-            <input
-              id="fechaFin"
-              type="date"
-              value={fechaFin}
-              onChange={(event) => setFechaFin(event.target.value)}
-            />
-          </div>
+          <CalendarField
+            id="fechaInicio"
+            label="Fecha inicio"
+            value={fechaInicio}
+            max={fechaFin}
+            onChange={setFechaInicio}
+          />
+          <CalendarField
+            id="fechaFin"
+            label="Fecha fin"
+            value={fechaFin}
+            min={fechaInicio}
+            onChange={setFechaFin}
+          />
           <button type="button" className="btn btn-primary" onClick={handleApplyDateRange}>
             Aplicar rango
           </button>
@@ -283,16 +418,22 @@ const TareasSemanales = () => {
                           <span>{getTaskDescription(task)}</span>
                         </div>
                       </td>
-                      {WEEK_DAYS.map((day) => {
+                      {WEEK_DAYS.map((day, dayIndex) => {
                         const isChecked = Boolean(weeklyChecks[taskKey]?.[day.key]);
+                        const cellKey = `${taskKey}-${day.key}`;
+                        const isSaving = savingCellKey === cellKey;
+                        const workDate = currentWeekDates[dayIndex];
 
                         return (
-                          <td key={`${taskKey}-${day.key}`}>
+                          <td key={cellKey}>
                             <label className="weekly-checkbox">
                               <input
                                 type="checkbox"
                                 checked={isChecked}
-                                onChange={() => handleToggleDay(taskKey, day.key)}
+                                disabled={isChecked || isSaving}
+                                onChange={() =>
+                                  registerWorkLog(task, taskKey, day.key, day.label, workDate)
+                                }
                               />
                               <span>{`Marcar ${getTaskTitle(task)} en ${day.label}`}</span>
                             </label>
