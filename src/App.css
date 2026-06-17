@@ -320,6 +320,39 @@ button {
   color: #334155;
 }
 
+.weekly-summary-card p + p {
+  margin-top: 8px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.weekly-range-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(219, 234, 254, 0.55) 0%, rgba(220, 252, 231, 0.55) 100%);
+  border: 1px solid rgba(37, 99, 235, 0.14);
+}
+
+.weekly-range-field {
+  display: grid;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.weekly-range-field label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.weekly-range-field input {
+  border-radius: 12px;
+}
+
 .weekly-table-shell {
   overflow-x: auto;
   border-radius: 28px;
@@ -483,6 +516,14 @@ button {
     border-radius: 18px;
   }
 
+  .weekly-range-controls {
+    align-items: stretch;
+  }
+
+  .weekly-range-controls .btn {
+    width: auto;
+  }
+
   .task-card h3 {
     font-size: 18px;
   }
@@ -503,6 +544,14 @@ button {
 
   .weekly-task-cell {
     min-width: 180px;
+  }
+
+  .weekly-range-field {
+    min-width: 100%;
+  }
+
+  .weekly-range-controls .btn {
+    width: 100%;
   }
 }
   .task-card p,
